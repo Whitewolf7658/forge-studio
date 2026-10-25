@@ -8,7 +8,7 @@ const $ = (selector) => document.querySelector(selector);
 const app = $('#app');
 app.innerHTML = `
 <div class="studio">
-  <header class="topbar"><div class="brand"><span class="brand-mark">F</span><div><strong>FORGE</strong><span>STUDIO</span></div><span class="version">BETA 0.6</span></div>
+  <header class="topbar"><div class="brand"><span class="brand-mark">F</span><div><strong>FORGE</strong><span>STUDIO</span></div><span class="version">BETA 0.7</span></div>
     <nav class="main-menus"><button data-action="menu-file">File</button><button data-action="menu-edit">Edit</button><button data-action="menu-add">Add</button><button data-action="menu-view">View</button></nav><div class="top-actions"><button data-action="new" title="New scene">New</button><button data-action="save" title="Download project">Save project</button><button data-action="load" title="Load project">Open project</button><span class="separator"></span><button data-action="undo" title="Undo (Ctrl+Z)">↶</button><button data-action="redo" title="Redo (Ctrl+Shift+Z)">↷</button><span class="separator"></span><button class="primary" data-action="export">Export GLB ↗</button></div>
   </header>
   <div id="menu-popover" class="menu-popover hidden"></div><div class="workspace">
@@ -62,16 +62,17 @@ function geometryFor(type) {
     case 'Cone': return new THREE.ConeGeometry(0.9, 1.8, 48);
     case 'Torus': return new THREE.TorusGeometry(0.75, 0.25, 20, 64);
     case 'Plane': return new THREE.PlaneGeometry(2, 2);
-    default: return new THREE.BoxGeometry(1.8, 1.8, 1.8);
+    default: return new THREE.BoxGeometry(1.8, 1.8, 1.8, 1, 1, 1);
   }
 }
 function makeObject(type, props = {}) {
   const material = new THREE.MeshStandardMaterial({ color: props.color || '#879bb7', metalness: props.metalness ?? 0.12, roughness: props.roughness ?? 0.56, side: THREE.DoubleSide });
   const mesh = new THREE.Mesh(geometryFor(type), material);
   mesh.material.wireframe = wireframe;
-  if (props.geometry?.positions && Array.isArray(props.geometry.positions)) { mesh.geometry.dispose(); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(props.geometry.positions, 3)); g.computeVertexNormals(); mesh.geometry = g; }
+  if (props.geometry?.positions && Array.isArray(props.geometry.positions)) { mesh.geometry.dispose(); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(props.geometry.positions, 3)); if (Array.isArray(props.geometry.indices)) g.setIndex(props.geometry.indices); g.computeVertexNormals(); mesh.geometry = g; }
   mesh.userData.edited = !!props.geometry;
   mesh.userData.subdivisions = props.subdivisions || 0;
+  mesh.userData.quadGrid = !!props.quadGrid;
   mesh.userData.type = type;
   mesh.userData.id = props.id || idCounter++;
   idCounter = Math.max(idCounter, mesh.userData.id + 1);
@@ -82,7 +83,7 @@ function makeObject(type, props = {}) {
   mesh.castShadow = true; mesh.receiveShadow = true;
   scene.add(mesh); objects.push(mesh); return mesh;
 }
-function serialize() { return { version: 2, objects: objects.map(o => ({ id: o.userData.id, type: o.userData.type, name: o.name, position: o.position.toArray(), rotation: [o.rotation.x, o.rotation.y, o.rotation.z], scale: o.scale.toArray(), color: `#${o.material.color.getHexString()}`, metalness: o.material.metalness, roughness: o.material.roughness, subdivisions: o.userData.subdivisions || 0, ...(o.userData.edited ? { geometry: { positions: Array.from(o.geometry.getAttribute('position').array) } } : {}) })) }; }
+function serialize() { return { version: 2, objects: objects.map(o => ({ id: o.userData.id, type: o.userData.type, name: o.name, position: o.position.toArray(), rotation: [o.rotation.x, o.rotation.y, o.rotation.z], scale: o.scale.toArray(), color: `#${o.material.color.getHexString()}`, metalness: o.material.metalness, roughness: o.material.roughness, subdivisions: o.userData.subdivisions || 0, quadGrid: !!o.userData.quadGrid, ...(o.userData.edited ? { geometry: { positions: Array.from(o.geometry.getAttribute('position').array), ...(o.geometry.index ? {indices:Array.from(o.geometry.index.array)} : {}) } } : {}) })) }; }
 function clearObjects() { clearFace(); select(null); for (const obj of objects) { scene.remove(obj); obj.geometry.dispose(); obj.material.dispose(); } objects.length = 0; }
 function restore(data, preferredId = null) { if (!data || !Array.isArray(data.objects) || data.objects.length > 2000) throw Error('Invalid project'); restoring = true; clearObjects(); for (const item of data.objects) if (types.includes(item.type)) makeObject(item.type, item); select(objects.find(o => o.userData.id === preferredId) || null); renderHierarchy(); restoring = false; }
 function commitChange() { if (restoring) return; const snapshot = JSON.stringify(serialize()); if (history[historyIndex] === snapshot) return; history = history.slice(0, historyIndex + 1); history.push(snapshot); if (history.length > 80) history.shift(); historyIndex = history.length - 1; }
@@ -119,6 +120,7 @@ function clearFace() {
 }
 function toggleEditMode(force = null) {
   editMode = force == null ? !editMode : force;
+  orbit.enablePan = !editMode;
   if (!editMode) activeMeshTool = 'select';
   clearFace();
   document.querySelector('[data-action="edit-mode"]').classList.toggle('active', editMode);
@@ -128,6 +130,21 @@ function toggleEditMode(force = null) {
   $('#selection-status').textContent = editMode ? 'FACE MODE · Click a triangle · E extrude · I inset' : (selected?.name || 'No selection');
 }
 function faceRegion(mesh, index) {
+  if (mesh.userData.quadGrid) {
+    const pair = index % 2 === 0 ? index + 1 : index - 1;
+    const t = trianglePositions(mesh,index), u = trianglePositions(mesh,pair);
+    const normal = t[1].clone().sub(t[0]).cross(t[2].clone().sub(t[0])).normalize();
+    const key = v => v.toArray().map(x => Math.round(x*10000)).join(',');
+    const edgeMap = new Map();
+    for (const verts of [t,u]) for (let j=0;j<3;j++) {
+      const a=verts[j],b=verts[(j+1)%3], id=[key(a),key(b)].sort().join('|');
+      if (edgeMap.has(id)) edgeMap.delete(id); else edgeMap.set(id,[a,b]);
+    }
+    const edges=[...edgeMap.values()];
+    const vertices=[]; const seen=new Set();
+    for (const [a,b] of edges) for (const v of [a,b]) if (!seen.has(key(v))) { seen.add(key(v)); vertices.push(v); }
+    return {faces:[Math.min(index,pair),Math.max(index,pair)],edges,vertices,normal};
+  }
   if (mesh.userData.subdivisions > 0) {
     const tri = trianglePositions(mesh,index);
     const normal = tri[1].clone().sub(tri[0]).cross(tri[2].clone().sub(tri[0])).normalize();
@@ -218,6 +235,19 @@ function markFace(index) {
 function subdivideMesh() {
   if (!selected) { alert('Select a mesh to add detail.'); return; }
   if ((selected.userData.subdivisions || 0) >= 4) { alert('Maximum detail level reached.'); return; }
+  if (selected.userData.type === 'Box' && !selected.userData.edited) {
+    const level = (selected.userData.subdivisions || 0) + 1;
+    const segments = 2 ** level;
+    const g = new THREE.BoxGeometry(1.8,1.8,1.8,segments,segments,segments);
+    clearFace();
+    selected.geometry.dispose(); selected.geometry = g;
+    selected.userData.subdivisions = level;
+    selected.userData.quadGrid = true;
+    selected.userData.edited = true;
+    commitChange(); renderHierarchy();
+    $('#selection-status').textContent = segments + ' × ' + segments + ' QUADS per cube side · Select Extrude and drag one square';
+    return;
+  }
   const geometry = selected.geometry;
   const position = geometry.getAttribute('position');
   const count = geometry.index ? geometry.index.count / 3 : position.count / 3;
@@ -234,13 +264,14 @@ function subdivideMesh() {
   const replacement = new THREE.BufferGeometry();
   replacement.setAttribute('position',new THREE.Float32BufferAttribute(result,3));
   replacement.computeVertexNormals();
-  clearFace();
-  selected.geometry.dispose(); selected.geometry = replacement;
+  clearFace(); selected.geometry.dispose(); selected.geometry = replacement;
   selected.userData.edited = true;
+  selected.userData.quadGrid = false;
   selected.userData.subdivisions = (selected.userData.subdivisions || 0) + 1;
   commitChange(); renderHierarchy();
-  $('#selection-status').textContent = 'Detail level ' + selected.userData.subdivisions + ' · ' + count*4 + ' editable triangles · Click Extrude then drag';
+  $('#selection-status').textContent = 'Subdivision level ' + selected.userData.subdivisions;
 }
+
 function makeExtrusionBase(source, index, moveOnly) {
   const region = faceRegion(selected, index);
   const g = source.index ? source.toNonIndexed() : source.clone();
@@ -290,6 +321,7 @@ function faceOperation(kind) {
   selected.geometry.dispose();
   selected.geometry = geometry;
   selected.userData.edited = true;
+  selected.userData.quadGrid = false;
   original.dispose();
   clearFace();
   renderHierarchy();
@@ -348,6 +380,7 @@ renderer.domElement.addEventListener('pointerdown', event => {
     if ((activeMeshTool === 'extrude' && hitFace != null) || (handleHit && faceIndex >= 0)) {
       if (!handleHit) markFace(hitFace);
       dragFace = { startY: event.clientY, startX: event.clientX, started: false, shift: event.shiftKey, face: faceIndex, original: selected.geometry.clone(), base: null };
+      orbit.enabled = false;
       renderer.domElement.setPointerCapture(event.pointerId);
     }
   }
@@ -376,15 +409,17 @@ renderer.domElement.addEventListener('pointermove', event => {
   if (faceHighlight) faceHighlight.visible = false;
   $('#selection-status').textContent = 'Drag extrusion · ' + amount.toFixed(2) + ' studs';
 });
-renderer.domElement.addEventListener('pointercancel', () => { if (dragFace) finishFaceDrag(); });
+renderer.domElement.addEventListener('pointercancel', () => { if (dragFace) finishFaceDrag(); orbit.enabled = true; });
 function finishFaceDrag() {
   if (!dragFace) return;
   const changed = dragFace.started;
+  if (changed) selected.userData.quadGrid = false;
   dragFace.original.dispose();
   dragFace = null;
+  orbit.enabled = true;
   if (changed) { clearFace(); renderHierarchy(); commitChange(); $('#selection-status').textContent = 'Extrusion committed · Ctrl+Z to undo'; }
 }
-renderer.domElement.addEventListener('pointerup', () => { if (dragFace?.started) finishFaceDrag(); });
+renderer.domElement.addEventListener('pointerup', () => { if (dragFace) finishFaceDrag(); });
 renderer.domElement.addEventListener('pointerup', event => { if (event.button !== 0 || !pointerDown || transform.dragging || dragFace?.started) { pointerDown = null; return; } const distance = Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y); pointerDown = null; if (distance > 5) return; const rect = renderer.domElement.getBoundingClientRect(); pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1; pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1; raycaster.setFromCamera(pointer, camera); const hits = raycaster.intersectObjects(objects, false); if (editMode && selected && hits[0]?.object === selected) markFace(hits[0].faceIndex); else select(hits.length ? hits[0].object : null); });
 window.addEventListener('keydown', event => { const typing = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName); if (typing) return; const modifier = event.ctrlKey || event.metaKey; if (modifier && event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? redo() : undo(); } else if (modifier && event.key.toLowerCase() === 'y') { event.preventDefault(); redo(); } else if (modifier && event.key === '2') { event.preventDefault(); subdivideMesh(); } else if (modifier && event.key.toLowerCase() === 'd') { event.preventDefault(); duplicate(); } else if (event.key === 'Delete' || event.key === 'Backspace') remove(); else if (event.key === 'Tab') { event.preventDefault(); toggleEditMode(); } else if (editMode && event.key.toLowerCase() === 'e') faceOperation('extrude'); else if (editMode && event.key.toLowerCase() === 'i') faceOperation('inset'); else if (event.key.toLowerCase() === 'f') focus(); else if (['g', 'r', 's'].includes(event.key.toLowerCase())) { const mode = ({ g: 'translate', r: 'rotate', s: 'scale' })[event.key.toLowerCase()]; document.querySelector(`[data-mode="${mode}"]`).click(); } });
 const resizeObserver = new ResizeObserver(() => { const w = viewport.clientWidth, h = viewport.clientHeight; if (!w || !h) return; camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h, false); }); resizeObserver.observe(viewport);
