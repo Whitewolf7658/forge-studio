@@ -8,7 +8,7 @@ const $ = (selector) => document.querySelector(selector);
 const app = $('#app');
 app.innerHTML = `
 <div class="studio">
-  <header class="topbar"><div class="brand"><span class="brand-mark">F</span><div><strong>FORGE</strong><span>STUDIO</span></div><span class="version">BETA 0.4</span></div>
+  <header class="topbar"><div class="brand"><span class="brand-mark">F</span><div><strong>FORGE</strong><span>STUDIO</span></div><span class="version">BETA 0.5</span></div>
     <nav class="main-menus"><button data-action="menu-file">File</button><button data-action="menu-edit">Edit</button><button data-action="menu-add">Add</button><button data-action="menu-view">View</button></nav><div class="top-actions"><button data-action="new" title="New scene">New</button><button data-action="save" title="Download project">Save project</button><button data-action="load" title="Load project">Open project</button><span class="separator"></span><button data-action="undo" title="Undo (Ctrl+Z)">↶</button><button data-action="redo" title="Redo (Ctrl+Shift+Z)">↷</button><span class="separator"></span><button class="primary" data-action="export">Export GLB ↗</button></div>
   </header>
   <div id="menu-popover" class="menu-popover hidden"></div><div class="workspace">
@@ -52,7 +52,7 @@ scene.add(transform.getHelper());
 transform.addEventListener('dragging-changed', (event) => { orbit.enabled = !event.value; if (!event.value) { commitChange(); syncInspector(); } });
 transform.addEventListener('objectChange', () => syncInspector());
 const raycaster = new THREE.Raycaster(); const pointer = new THREE.Vector2();
-let editMode = false; let faceIndex = -1; let faceHighlight = null; let dragFace = null; let wireframe = false;
+let editMode = false; let faceIndex = -1; let faceHighlight = null; let dragFace = null; let wireframe = false; let activeMeshTool = 'select'; let faceGroup = null; let faceHandle = null;
 const objects = []; let selected = null; let history = []; let historyIndex = -1; let restoring = false; let idCounter = 1;
 const types = ['Box', 'Sphere', 'Cylinder', 'Cone', 'Torus', 'Plane'];
 function geometryFor(type) {
@@ -97,9 +97,18 @@ function remove() { if (!selected) return; clearFace(); const obj = selected; se
 function duplicate() { if (!selected) return; const data = serialize().objects.find(o => o.id === selected.userData.id); const clone = makeObject(data.type, { ...data, id: undefined, name: `${data.name} Copy`, geometry: data.geometry, position: [data.position[0] + 0.5, data.position[1], data.position[2] + 0.5] }); select(clone); commitChange(); }
 function focus() { if (!selected) return; const box = new THREE.Box3().setFromObject(selected); const center = box.getCenter(new THREE.Vector3()); const size = box.getSize(new THREE.Vector3()).length(); orbit.target.copy(center); camera.position.copy(center).add(new THREE.Vector3(size * 1.3, size * 0.9, size * 1.3)); orbit.update(); }
 
+function activateMeshTool(tool) {
+  if (!selected) { alert('Select a mesh first.'); return; }
+  if (!editMode) toggleEditMode(true);
+  activeMeshTool = tool;
+  document.querySelectorAll('[data-action="extrude-face"],[data-action="inset-face"]').forEach(b => b.classList.toggle('active', b.dataset.action === tool + '-face'));
+  $('#selection-status').textContent = tool === 'extrude' ? 'EXTRUDE · Click and drag any surface, or drag the orange arrow' : 'INSET · Click a surface to inset';
+}
 function clearFace() {
   dragFace = null;
   faceIndex = -1;
+  faceGroup = null;
+  if (faceHandle) { scene.remove(faceHandle); faceHandle.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); faceHandle = null; }
   if (faceHighlight) {
     scene.remove(faceHighlight);
     faceHighlight.geometry.dispose();
@@ -107,14 +116,59 @@ function clearFace() {
     faceHighlight = null;
   }
 }
-function toggleEditMode() {
-  editMode = !editMode;
+function toggleEditMode(force = null) {
+  editMode = force == null ? !editMode : force;
+  if (!editMode) activeMeshTool = 'select';
   clearFace();
   document.querySelector('[data-action="edit-mode"]').classList.toggle('active', editMode);
   transform.enabled = !editMode;
   transform.visible = !editMode;
   $('#edit-tip').classList.toggle('hidden', !editMode);
   $('#selection-status').textContent = editMode ? 'FACE MODE · Click a triangle · E extrude · I inset' : (selected?.name || 'No selection');
+}
+function faceRegion(mesh, index) {
+  // Grow a connected coplanar region so a cube side behaves as a single quad.
+  const geometry = mesh.geometry;
+  const count = geometry.index ? geometry.index.count / 3 : geometry.getAttribute('position').count / 3;
+  const faces = [];
+  const origin = trianglePositions(mesh, index);
+  const n = origin[1].clone().sub(origin[0]).cross(origin[2].clone().sub(origin[0])).normalize();
+  const plane = n.dot(origin[0]);
+  const key = v => v.toArray().map(x => Math.round(x * 10000)).join(',');
+  const region = new Set([index]);
+  const candidates = [];
+  for (let i = 0; i < count; i++) {
+    const t = trianglePositions(mesh, i);
+    const normal = t[1].clone().sub(t[0]).cross(t[2].clone().sub(t[0])).normalize();
+    if (normal.dot(n) > 0.999 && t.every(v => Math.abs(n.dot(v) - plane) < 0.0001)) candidates.push({ i, keys: t.map(key) });
+  }
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const f of candidates) {
+      if (region.has(f.i)) continue;
+      if ([...region].some(i => {
+        const other = candidates.find(c => c.i === i);
+        return other && f.keys.filter(k => other.keys.includes(k)).length >= 2;
+      })) { region.add(f.i); changed = true; }
+    }
+  }
+  const included = [...region].sort((a,b) => a-b);
+  const edgeMap = new Map();
+  for (const i of included) {
+    const t = trianglePositions(mesh, i);
+    for (let j = 0; j < 3; j++) {
+      const a = t[j], b = t[(j+1)%3];
+      const k1 = key(a), k2 = key(b);
+      const id = [k1,k2].sort().join('|');
+      if (edgeMap.has(id)) edgeMap.delete(id); else edgeMap.set(id, [a,b]);
+    }
+  }
+  const edges = [...edgeMap.values()];
+  const vertices = [];
+  const seen = new Set();
+  for (const [a,b] of edges) for (const v of [a,b]) if (!seen.has(key(v))) { vertices.push(v); seen.add(key(v)); }
+  return { faces: included, edges, vertices, normal: n };
 }
 function trianglePositions(mesh, index) {
   const geometry = mesh.geometry;
@@ -130,44 +184,51 @@ function markFace(index) {
   clearFace();
   if (!selected || index == null) return;
   faceIndex = index;
-  const vertices = trianglePositions(selected, index);
+  faceGroup = faceRegion(selected, index);
+  const positions = faceGroup.faces.flatMap(i => trianglePositions(selected, i).flatMap(v => v.toArray()));
   const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices.flatMap(v => v.toArray()), 3));
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.computeVertexNormals();
   faceHighlight = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
-    color: 0x78b8ff, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthTest: false
+    color: 0x6caeff, transparent: true, opacity: 0.48, side: THREE.DoubleSide, depthTest: false
   }));
   faceHighlight.position.copy(selected.position);
   faceHighlight.quaternion.copy(selected.quaternion);
   faceHighlight.scale.copy(selected.scale);
   faceHighlight.renderOrder = 999;
   scene.add(faceHighlight);
-  $('#selection-status').textContent = 'Triangle ' + (index + 1) + ' selected · E extrude · I inset';
+  const center = faceGroup.vertices.reduce((a,v) => a.add(v), new THREE.Vector3()).multiplyScalar(1 / faceGroup.vertices.length);
+  const world = selected.localToWorld(center.clone());
+  const direction = faceGroup.normal.clone().transformDirection(selected.matrixWorld);
+  faceHandle = new THREE.Group();
+  const arrow = new THREE.ArrowHelper(direction, world, 0.85, 0xffb45c, 0.22, 0.13);
+  arrow.userData.faceArrow = true;
+  arrow.traverse(o => { o.userData.faceArrow = true; });
+  faceHandle.add(arrow);
+  scene.add(faceHandle);
+  $('#selection-status').textContent = faceGroup.faces.length + ' triangles grouped as one surface · Drag to extrude';
 }
 
 function makeExtrusionBase(source, index, moveOnly) {
-  const nonIndexed = source.index ? source.toNonIndexed() : source.clone();
-  const positions = Array.from(nonIndexed.getAttribute('position').array);
-  const offset = index * 9;
-  const tri = [0, 1, 2].map(i => new THREE.Vector3(...positions.slice(offset + i * 3, offset + i * 3 + 3)));
-  const normal = tri[1].clone().sub(tri[0]).cross(tri[2].clone().sub(tri[0])).normalize();
+  const original = selected.geometry;
+  const region = faceRegion(selected, index);
+  const g = source.index ? source.toNonIndexed() : source.clone();
+  const positions = Array.from(g.getAttribute('position').array);
   const topIndices = [];
-  if (moveOnly) {
-    for (let i = 0; i < 3; i++) topIndices.push(index * 3 + i);
-  } else {
-    // Replace the selected cap with the extruded cap, then create six side triangles.
-    for (let i = 0; i < 3; i++) topIndices.push(index * 3 + i);
-    const add = (a,b,c) => positions.push(...a.toArray(),...b.toArray(),...c.toArray());
-    for (let i = 0; i < 3; i++) {
-      const j = (i + 1) % 3;
-      add(tri[i],tri[j],tri[j]);
-      topIndices.push(positions.length / 3 - 1);
-      add(tri[i],tri[j],tri[i]);
-      topIndices.push(positions.length / 3 - 2, positions.length / 3 - 1);
+  const vertexKey = v => v.toArray().map(x => Math.round(x*10000)).join(',');
+  const keys = new Set(region.vertices.map(vertexKey));
+  for (const face of region.faces) for (let j=0;j<3;j++) topIndices.push(face*3+j);
+  if (!moveOnly) {
+    // Each boundary edge becomes two side triangles. Shared interior edges are excluded.
+    for (const [a,b] of region.edges) {
+      const at = positions.length/3;
+      positions.push(...a.toArray(),...b.toArray(),...b.toArray());
+      positions.push(...a.toArray(),...b.toArray(),...a.toArray());
+      topIndices.push(at+2, at+4);
     }
   }
-  nonIndexed.dispose();
-  return { positions, normal, topIndices };
+  g.dispose();
+  return { positions, normal: region.normal, topIndices };
 }
 
 function faceOperation(kind) {
@@ -209,7 +270,7 @@ function faceOperation(kind) {
 
 function download(name, blob) { const a = document.createElement('a'); const url = URL.createObjectURL(blob); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 async function exportGLB() { const group = new THREE.Group(); for (const o of objects) group.add(o.clone()); if (!objects.length) return alert('Add an object before exporting.'); try { const buffer = await new GLTFExporter().parseAsync(group, { binary: true, onlyVisible: true }); download('forge-scene.glb', new Blob([buffer], { type: 'model/gltf-binary' })); } catch (error) { alert(`Export failed: ${error.message}`); } }
-function action(name) { switch (name) { case 'new': if (objects.length && !confirm('Start a new scene? Download your project first if you want to keep it.')) return; clearObjects(); renderHierarchy(); commitChange(); break; case 'save': download('forge-project.json', new Blob([JSON.stringify(serialize(), null, 2)], { type: 'application/json' })); break; case 'load': $('#file-picker').click(); break; case 'export': exportGLB(); break; case 'undo': undo(); break; case 'redo': redo(); break; case 'delete': remove(); break; case 'duplicate': duplicate(); break; case 'frame': focus(); break; case 'edit-mode': toggleEditMode(); break; case 'extrude-face': faceOperation('extrude'); break; case 'inset-face': faceOperation('inset'); break; case 'add-menu': $('#add-menu').classList.toggle('hidden'); break; case 'toggle-grid': grid.visible = !grid.visible; axes.visible = grid.visible; break; case 'toggle-wire': wireframe = !wireframe; objects.forEach(o => o.material.wireframe = wireframe); break; case 'toggle-projection': camera.zoom = camera.zoom === 1 ? 1.7 : 1; camera.updateProjectionMatrix(); $('#view-name').textContent = camera.zoom === 1 ? 'Perspective' : 'Zoomed perspective'; break; case 'menu-file': showMenu('file'); break; case 'menu-edit': showMenu('edit'); break; case 'menu-add': showMenu('add'); break; case 'menu-view': showMenu('view'); break; } }
+function action(name) { switch (name) { case 'new': if (objects.length && !confirm('Start a new scene? Download your project first if you want to keep it.')) return; clearObjects(); renderHierarchy(); commitChange(); break; case 'save': download('forge-project.json', new Blob([JSON.stringify(serialize(), null, 2)], { type: 'application/json' })); break; case 'load': $('#file-picker').click(); break; case 'export': exportGLB(); break; case 'undo': undo(); break; case 'redo': redo(); break; case 'delete': remove(); break; case 'duplicate': duplicate(); break; case 'frame': focus(); break; case 'edit-mode': toggleEditMode(); break; case 'extrude-face': activateMeshTool('extrude'); break; case 'inset-face': activateMeshTool('inset'); break; case 'add-menu': $('#add-menu').classList.toggle('hidden'); break; case 'toggle-grid': grid.visible = !grid.visible; axes.visible = grid.visible; break; case 'toggle-wire': wireframe = !wireframe; objects.forEach(o => o.material.wireframe = wireframe); break; case 'toggle-projection': camera.zoom = camera.zoom === 1 ? 1.7 : 1; camera.updateProjectionMatrix(); $('#view-name').textContent = camera.zoom === 1 ? 'Perspective' : 'Zoomed perspective'; break; case 'menu-file': showMenu('file'); break; case 'menu-edit': showMenu('edit'); break; case 'menu-add': showMenu('add'); break; case 'menu-view': showMenu('view'); break; } }
 document.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => action(button.dataset.action)));
 document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => { transform.setMode(button.dataset.mode); document.querySelectorAll('[data-mode]').forEach(el => el.classList.toggle('active', el === button)); }));
 $('#add-object').onclick = () => action('add-menu');
@@ -247,12 +308,16 @@ let pointerDown = null;
 renderer.domElement.addEventListener('pointerdown', event => {
   if (event.button !== 0) return;
   pointerDown = { x: event.clientX, y: event.clientY };
-  if (editMode && selected && faceIndex >= 0) {
+  if (editMode && selected) {
     const rect = renderer.domElement.getBoundingClientRect();
     pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
     raycaster.setFromCamera(pointer, camera);
     const hits = raycaster.intersectObject(selected, false);
-    if (hits[0]?.faceIndex === faceIndex) {
+    const handleHit = faceHandle && raycaster.intersectObjects(faceHandle.children, true).length > 0;
+    const hitFace = hits[0]?.faceIndex;
+    if (activeMeshTool === 'inset' && hitFace != null) { markFace(hitFace); faceOperation('inset'); pointerDown = null; return; }
+    if ((activeMeshTool === 'extrude' && hitFace != null) || (handleHit && faceIndex >= 0)) {
+      if (!handleHit) markFace(hitFace);
       dragFace = { startY: event.clientY, startX: event.clientX, started: false, shift: event.shiftKey, face: faceIndex, original: selected.geometry.clone(), base: null };
       renderer.domElement.setPointerCapture(event.pointerId);
     }
