@@ -4,425 +4,121 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import './styles/main.css';
 
-const $ = (selector) => document.querySelector(selector);
-const app = $('#app');
+const $ = id => document.getElementById(id);
+const app = $('app');
 app.innerHTML = `
-<div class="studio">
-  <header class="topbar"><div class="brand"><span class="brand-mark">F</span><div><strong>FORGE</strong><span>STUDIO</span></div><span class="version">BETA 0.7</span></div>
-    <nav class="main-menus"><button data-action="menu-file">File</button><button data-action="menu-edit">Edit</button><button data-action="menu-add">Add</button><button data-action="menu-view">View</button></nav><div class="top-actions"><button data-action="new" title="New scene">New</button><button data-action="save" title="Download project">Save project</button><button data-action="load" title="Load project">Open project</button><span class="separator"></span><button data-action="undo" title="Undo (Ctrl+Z)">↶</button><button data-action="redo" title="Redo (Ctrl+Shift+Z)">↷</button><span class="separator"></span><button class="primary" data-action="export">Export GLB ↗</button></div>
-  </header>
-  <div id="menu-popover" class="menu-popover hidden"></div><div class="workspace">
-    <aside class="rail"><button class="tool active" data-mode="translate" title="Move (G)">✥<small>Move</small></button><button class="tool" data-mode="rotate" title="Rotate (R)">⟳<small>Rotate</small></button><button class="tool" data-mode="scale" title="Scale (S)">⤢<small>Scale</small></button><div class="rail-line"></div><button class="tool" data-action="edit-mode" title="Face editing (Tab)">▱<small>Faces</small></button><button class="tool" data-action="subdivide" title="Add mesh detail (Ctrl+2)">▦<small>Subdivide</small></button><button class="tool" data-action="extrude-face" title="Extrude selected face (E)">⇧<small>Extrude</small></button><button class="tool" data-action="inset-face" title="Inset selected face (I)">◇<small>Inset</small></button><button class="tool" data-action="frame" title="Frame selection (F)">◎<small>Focus</small></button><button class="tool" data-action="delete" title="Delete selection">⌫<small>Delete</small></button></aside>
-    <section class="viewport-shell"><div class="viewport-header"><div class="crumb">SCENE <span>/</span> <strong id="view-name">Perspective</strong></div><div class="view-chips"><button class="chip" data-action="toggle-grid">Grid</button><button class="chip" data-action="toggle-wire">Wireframe</button><button class="chip" data-action="toggle-projection">Perspective / Ortho</button></div></div><div id="viewport"></div><div class="viewport-hint" id="viewport-hint">LMB select · RMB orbit · Tab face mode · E extrude · I inset</div><div class="edit-tip hidden" id="edit-tip"><strong>EDIT MODE</strong><span>Choose Subdivide to create smaller editable regions (repeat for finer detail). Choose Extrude, then drag the exact region you want. Ctrl+Z undo · Tab exit</span></div><div class="axes"><span class="axis x">X</span><span class="axis y">Y</span><span class="axis z">Z</span></div><div class="viewport-bottom"><span id="selection-status">No selection</span><span>1 unit = 1 stud</span></div></section>
-    <aside class="sidebar"><div class="panel scene-panel"><div class="panel-head"><div><span class="eyebrow">WORKSPACE</span><h2>Scene hierarchy</h2></div><button class="icon-button" data-action="add-menu" title="Add object">＋</button></div><div class="object-toolbar"><input id="object-search" placeholder="Search objects..." autocomplete="off"/><span id="object-count">0 objects</span></div><div id="hierarchy" class="hierarchy"></div><div class="add-wrap"><button id="add-object" class="add-button">＋ Add object <span>▾</span></button><div id="add-menu" class="add-menu hidden"><button data-add="Box">▣ Cube</button><button data-add="Sphere">◉ Sphere</button><button data-add="Cylinder">▤ Cylinder</button><button data-add="Cone">△ Cone</button><button data-add="Torus">◎ Torus</button><button data-add="Plane">▱ Plane</button></div></div></div>
-      <div class="panel inspector-panel"><div class="panel-head"><div><span class="eyebrow">OBJECT</span><h2>Inspector</h2></div><span class="inspector-icon">⚙</span></div><div id="inspector-empty" class="empty-state"><div class="empty-symbol">◇</div><strong>Nothing selected</strong><p>Select an object in the viewport or hierarchy to edit it.</p></div><div id="inspector" class="hidden"><label class="field-label">NAME</label><input id="object-name" class="name-input"/><div class="section-title">TRANSFORM</div><div id="transform-fields"></div><div class="section-title">APPEARANCE</div><div class="appearance-row"><span>Base color</span><input id="object-color" type="color" value="#8096b6"/></div><div class="appearance-row"><span>Metalness</span><input id="metalness" type="range" min="0" max="1" step="0.01" value="0.1"/></div><div class="appearance-row"><span>Roughness</span><input id="roughness" type="range" min="0" max="1" step="0.01" value="0.7"/></div><div class="inspector-actions"><button data-action="duplicate">Duplicate</button><button data-action="delete">Delete</button></div></div></div>
-    </aside>
-  </div><footer class="statusbar"><div><span class="status-light"></span> READY <span class="footer-divider">|</span> WEBGL 3D EDITOR</div><div><span id="stats">0 objects</span><span class="footer-divider">|</span> FORGE STUDIO</div></footer>
-</div><input type="file" id="file-picker" accept=".json,application/json" hidden />`;
+<div class="app">
+<header class="top"><div class="identity"><div class="brand-icon">F</div><div class="brand"><b>FORGE</b><small>STUDIO <em>1.0 WORKSPACE</em></small></div></div><div class="menus" id="menus"><button data-menu="File">File</button><button data-menu="Edit">Edit</button><button data-menu="Add">Add</button><button data-menu="Mesh">Mesh</button><button data-menu="View">View</button></div><div class="topright"><span class="project-name" id="project-name">Untitled Project</span><button data-command="save">Save</button><button class="accent" data-command="export">Export GLB ↗</button></div></header>
+<div class="worktabs"><button class="tab active" data-workspace="Modeling">Modeling</button><button class="tab" data-workspace="Sculpting">Sculpting</button><button class="tab" data-workspace="Layout">Layout</button><span class="work-hint">ROBLOX ASSET WORKSPACE</span></div>
+<div class="body">
+<aside class="toolbar"><div class="toolgroup" id="tools"><button class="tool active" data-tool="select" title="Select object or mesh region (Q)"><span>▧</span>Select</button><button class="tool" data-tool="move" title="Move (G)"><span>✥</span>Move</button><button class="tool" data-tool="rotate" title="Rotate (R)"><span>⟳</span>Rotate</button><button class="tool" data-tool="scale" title="Scale (S)"><span>⤢</span>Scale</button><div class="tool-sep"></div><button class="tool" data-tool="extrude" title="Drag a selected surface to extrude (E)"><span>⇧</span>Extrude</button><button class="tool" data-tool="inset" title="Inset selected surface"><span>◇</span>Inset</button><button class="tool" data-tool="sculpt" title="Sculpt mesh with brush"><span>◉</span>Sculpt</button></div></aside>
+<main class="center"><div class="viewportbar"><div class="viewportleft"><button id="mode" data-command="mode">OBJECT MODE ▾</button><div class="divider-v"></div><span id="selection-mode">Object selection</span></div><div class="viewportright"><button data-command="grid">Grid</button><button data-command="wire">Wire</button><button data-command="frame">Frame <kbd>F</kbd></button></div></div><div id="viewport"></div><div class="view-overlay"><div id="tool-message">Select an object to begin. Tab switches Object / Edit mode.</div><div id="brush-cursor"></div></div><div class="viewport-bottom"><span id="selection-status">Ready</span><span>RMB orbit · MMB pan · Wheel zoom</span></div><section class="timeline"><div class="timeline-head"><b>HISTORY</b><button data-command="undo">↶ Undo</button><button data-command="redo">↷ Redo</button></div><div id="history-items">New scene</div></section></main>
+<aside class="right"><section class="rightsection outliner"><div class="sectionheading"><div><small>SCENE COLLECTION</small><h3>Outliner</h3></div><button data-command="add-cube" title="Add cube">＋</button></div><input id="search" placeholder="Search scene objects..." /><div id="objects"></div></section><section class="rightsection properties"><div class="sectionheading"><div><small>PROPERTIES</small><h3>Inspector</h3></div></div><div id="inspector"><p class="muted">Select an object to inspect its properties.</p></div></section><section class="rightsection"><div class="sectionheading"><div><small>MODELLING</small><h3>Tool settings</h3></div></div><div class="settings"><label>Subdivision grid <output id="divisions-label">2 × 2</output></label><input type="range" id="divisions" min="1" max="8" value="2" step="1"><button class="wide" data-command="subdivide">Apply grid to cube</button><label>Extrude distance <output id="distance-label">0.50 studs</output></label><input type="range" id="distance" min="0.05" max="3" value="0.5" step="0.05"><label>Sculpt brush radius <output id="radius-label">0.45 studs</output></label><input type="range" id="radius" min="0.1" max="2.5" value="0.45" step="0.05"><label>Brush strength <output id="strength-label">0.20</output></label><input type="range" id="strength" min="0.02" max="0.7" value="0.2" step="0.02"><div class="hint">Edit mode: click a square to select it. Extrude: drag a square to pull it out. Sculpt: drag over the mesh.</div></div></section></aside>
+</div><footer class="footer"><span><i class="ready"></i> FORGE ENGINE · WEBGL</span><span id="stats">0 objects</span><span>1 UNIT = 1 ROBLOX STUD</span></footer><div class="popup hidden" id="popup"></div><input type="file" id="open-file" accept=".json" hidden></div>`;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#171c25');
-scene.fog = new THREE.Fog('#171c25', 28, 90);
-const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 500);
-camera.position.set(7, 6, 9);
-const viewport = $('#viewport');
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+scene.background = new THREE.Color(0x1c1f25);
+const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 800);
+camera.position.set(6,5,8);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.35;
-viewport.appendChild(renderer.domElement);
-const orbit = new OrbitControls(camera, renderer.domElement);
+renderer.toneMappingExposure = 1.3;
+$('viewport').appendChild(renderer.domElement);
+const orbit = new OrbitControls(camera,renderer.domElement);
 orbit.enableDamping = true;
-orbit.dampingFactor = 0.08;
-orbit.minDistance = 1;
-orbit.maxDistance = 100;
-orbit.target.set(0, 0.8, 0);
 orbit.mouseButtons.LEFT = THREE.MOUSE.PAN;
 orbit.mouseButtons.MIDDLE = THREE.MOUSE.PAN;
 orbit.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
+orbit.target.set(0,0.8,0);
 orbit.update();
-const hemi = new THREE.HemisphereLight('#d9e8ff', '#454b58', 2.2); scene.add(hemi);
-const key = new THREE.DirectionalLight('#ffffff', 3); key.position.set(7, 12, 6); scene.add(key);
-const fill = new THREE.DirectionalLight('#80aaff', 1.2); fill.position.set(-7, 5, -4); scene.add(fill);
-const grid = new THREE.GridHelper(100, 100, '#455365', '#303946'); grid.material.transparent = true; grid.material.opacity = 0.58; scene.add(grid);
-const axes = new THREE.AxesHelper(1.4); axes.position.set(-0.01, 0.012, -0.01); scene.add(axes);
-const transform = new TransformControls(camera, renderer.domElement);
-scene.add(transform.getHelper());
-transform.addEventListener('dragging-changed', (event) => { orbit.enabled = !event.value; if (!event.value) { commitChange(); syncInspector(); } });
-transform.addEventListener('objectChange', () => syncInspector());
-const raycaster = new THREE.Raycaster(); const pointer = new THREE.Vector2();
-let editMode = false; let faceIndex = -1; let faceHighlight = null; let dragFace = null; let wireframe = false; let activeMeshTool = 'select'; let faceGroup = null; let faceHandle = null;
-const objects = []; let selected = null; let history = []; let historyIndex = -1; let restoring = false; let idCounter = 1;
-const types = ['Box', 'Sphere', 'Cylinder', 'Cone', 'Torus', 'Plane'];
-function geometryFor(type) {
-  switch (type) {
-    case 'Sphere': return new THREE.SphereGeometry(0.9, 48, 32);
-    case 'Cylinder': return new THREE.CylinderGeometry(0.8, 0.8, 1.8, 48);
-    case 'Cone': return new THREE.ConeGeometry(0.9, 1.8, 48);
-    case 'Torus': return new THREE.TorusGeometry(0.75, 0.25, 20, 64);
-    case 'Plane': return new THREE.PlaneGeometry(2, 2);
-    default: return new THREE.BoxGeometry(1.8, 1.8, 1.8, 1, 1, 1);
-  }
+scene.add(new THREE.HemisphereLight(0xe2edff,0x454a54,2.5));
+const light = new THREE.DirectionalLight(0xffffff,3.2);light.position.set(6,12,8);scene.add(light);
+const grid = new THREE.GridHelper(100,100,0x566071,0x343c47);grid.material.transparent=true;grid.material.opacity=.6;scene.add(grid);
+const axes = new THREE.AxesHelper(1.5);axes.position.y=.012;scene.add(axes);
+const transform = new TransformControls(camera,renderer.domElement);scene.add(transform.getHelper());
+transform.addEventListener('dragging-changed',e=>{orbit.enabled=!e.value;if(!e.value){snapshot('Transform object');updateInspector();}});
+transform.addEventListener('objectChange',updateInspector);
+const raycaster = new THREE.Raycaster(),pointer = new THREE.Vector2();
+const meshes=[];let selected=null,mode='object',tool='select',selectedFace=null,overlay=null,drag=null,wire=false,history=[],historyIndex=-1,restoring=false,nextId=1,sculptDirty=false;
+const toolNames={select:'Select',move:'Move',rotate:'Rotate',scale:'Scale',extrude:'Extrude',inset:'Inset',sculpt:'Sculpt'};
+const vkey=v=>v.toArray().map(x=>Math.round(x*100000)).join(',');
+function primitive(kind,div=1){
+ if(kind==='Cube')return new THREE.BoxGeometry(1.8,1.8,1.8,div,div,div);
+ if(kind==='Sphere')return new THREE.SphereGeometry(.9,32,24);
+ if(kind==='Cylinder')return new THREE.CylinderGeometry(.8,.8,1.8,32);
+ if(kind==='Cone')return new THREE.ConeGeometry(.9,1.8,32);
+ if(kind==='Torus')return new THREE.TorusGeometry(.7,.23,16,48);
+ return new THREE.PlaneGeometry(2,2,8,8);
 }
-function makeObject(type, props = {}) {
-  const material = new THREE.MeshStandardMaterial({ color: props.color || '#879bb7', metalness: props.metalness ?? 0.12, roughness: props.roughness ?? 0.56, side: THREE.DoubleSide });
-  const mesh = new THREE.Mesh(geometryFor(type), material);
-  mesh.material.wireframe = wireframe;
-  if (props.geometry?.positions && Array.isArray(props.geometry.positions)) { mesh.geometry.dispose(); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(props.geometry.positions, 3)); if (Array.isArray(props.geometry.indices)) g.setIndex(props.geometry.indices); g.computeVertexNormals(); mesh.geometry = g; }
-  mesh.userData.edited = !!props.geometry;
-  mesh.userData.subdivisions = props.subdivisions || 0;
-  mesh.userData.quadGrid = !!props.quadGrid;
-  mesh.userData.type = type;
-  mesh.userData.id = props.id || idCounter++;
-  idCounter = Math.max(idCounter, mesh.userData.id + 1);
-  mesh.name = props.name || `${type === 'Box' ? 'Cube' : type} ${String(mesh.userData.id).padStart(2, '0')}`;
-  mesh.position.fromArray(props.position || [0, type === 'Plane' ? 0.01 : 1, 0]);
-  mesh.rotation.set(...(props.rotation || [0, 0, 0]));
-  mesh.scale.fromArray(props.scale || [1, 1, 1]);
-  mesh.castShadow = true; mesh.receiveShadow = true;
-  scene.add(mesh); objects.push(mesh); return mesh;
+function make(kind='Cube',data={}){
+ const g=data.positions?new THREE.BufferGeometry():primitive(kind,data.divisions||1);
+ if(data.positions){g.setAttribute('position',new THREE.Float32BufferAttribute(data.positions,3));if(data.indices)g.setIndex(data.indices);g.computeVertexNormals();}
+ const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:data.color||'#8ca4c6',roughness:data.roughness??.65,metalness:data.metalness??.05,side:THREE.DoubleSide,flatShading:true}));
+ m.name=data.name||kind+' '+String(nextId).padStart(2,'0');m.userData={id:data.id||nextId++,kind,divisions:data.divisions||1,quadGrid:data.quadGrid??(kind==='Cube'),edited:!!data.positions};
+ nextId=Math.max(nextId,m.userData.id+1);
+ m.position.fromArray(data.position||[0,kind==='Plane'?.01:.9,0]);m.rotation.fromArray(data.rotation||[0,0,0]);m.scale.fromArray(data.scale||[1,1,1]);
+ m.material.wireframe=wire;scene.add(m);meshes.push(m);return m;
 }
-function serialize() { return { version: 2, objects: objects.map(o => ({ id: o.userData.id, type: o.userData.type, name: o.name, position: o.position.toArray(), rotation: [o.rotation.x, o.rotation.y, o.rotation.z], scale: o.scale.toArray(), color: `#${o.material.color.getHexString()}`, metalness: o.material.metalness, roughness: o.material.roughness, subdivisions: o.userData.subdivisions || 0, quadGrid: !!o.userData.quadGrid, ...(o.userData.edited ? { geometry: { positions: Array.from(o.geometry.getAttribute('position').array), ...(o.geometry.index ? {indices:Array.from(o.geometry.index.array)} : {}) } } : {}) })) }; }
-function clearObjects() { clearFace(); select(null); for (const obj of objects) { scene.remove(obj); obj.geometry.dispose(); obj.material.dispose(); } objects.length = 0; }
-function restore(data, preferredId = null) { if (!data || !Array.isArray(data.objects) || data.objects.length > 2000) throw Error('Invalid project'); restoring = true; clearObjects(); for (const item of data.objects) if (types.includes(item.type)) makeObject(item.type, item); select(objects.find(o => o.userData.id === preferredId) || null); renderHierarchy(); restoring = false; }
-function commitChange() { if (restoring) return; const snapshot = JSON.stringify(serialize()); if (history[historyIndex] === snapshot) return; history = history.slice(0, historyIndex + 1); history.push(snapshot); if (history.length > 80) history.shift(); historyIndex = history.length - 1; }
-function undo() { if (historyIndex > 0) { const id = selected?.userData.id; restore(JSON.parse(history[--historyIndex]), id); } }
-function redo() { if (historyIndex < history.length - 1) { const id = selected?.userData.id; restore(JSON.parse(history[++historyIndex]), id); } }
-function select(obj) { clearFace(); selected = obj; transform.detach(); if (obj) transform.attach(obj); transform.visible = !editMode; transform.enabled = !editMode; $('#inspector').classList.toggle('hidden', !obj); $('#inspector-empty').classList.toggle('hidden', !!obj); $('#selection-status').textContent = obj ? `◈ ${obj.name}` : 'No selection'; renderHierarchy(); syncInspector(); }
-function renderHierarchy() { const search = ($('#object-search').value || '').toLowerCase(); $('#hierarchy').innerHTML = ''; for (const obj of objects.filter(o => o.name.toLowerCase().includes(search))) { const row = document.createElement('button'); row.className = `object-row ${obj === selected ? 'selected' : ''}`; row.innerHTML = `<span class="object-symbol">${({ Box: '▣', Sphere: '◉', Cylinder: '▤', Cone: '△', Torus: '◎', Plane: '▱' })[obj.userData.type]}</span><span class="object-title"></span><span class="object-type">${obj.userData.type}</span>`; row.querySelector('.object-title').textContent = obj.name; row.onclick = () => select(obj); $('#hierarchy').appendChild(row); } $('#object-count').textContent = `${objects.length} objects`; $('#stats').textContent = `${objects.length} objects · ${objects.reduce((n, o) => n + o.geometry.attributes.position.count, 0).toLocaleString()} vertices`; }
-const groups = [{ key: 'position', title: 'Position', labels: ['X', 'Y', 'Z'], colors: ['x', 'y', 'z'] }, { key: 'rotation', title: 'Rotation', labels: ['X', 'Y', 'Z'], colors: ['x', 'y', 'z'] }, { key: 'scale', title: 'Scale', labels: ['X', 'Y', 'Z'], colors: ['x', 'y', 'z'] }];
-$('#transform-fields').innerHTML = groups.map(group => `<div class="transform-group"><label>${group.title}</label><div class="triple">${group.labels.map((label, index) => `<div class="axis-input"><span class="${group.colors[index]}">${label}</span><input type="number" step="0.1" data-field="${group.key}" data-axis="${index}" /></div>`).join('')}</div></div>`).join('');
-function syncInspector() { if (!selected) return; $('#object-name').value = selected.name; for (const input of document.querySelectorAll('[data-field]')) { const field = input.dataset.field; const index = Number(input.dataset.axis); const value = field === 'rotation' ? THREE.MathUtils.radToDeg(selected.rotation[['x', 'y', 'z'][index]]) : selected[field].getComponent(index); if (document.activeElement !== input) input.value = Number(value.toFixed(3)); } if (document.activeElement !== $('#object-color')) $('#object-color').value = `#${selected.material.color.getHexString()}`; $('#metalness').value = selected.material.metalness; $('#roughness').value = selected.material.roughness; }
-function add(type) { const obj = makeObject(type); select(obj); commitChange(); $('#add-menu').classList.add('hidden'); }
-function remove() { if (!selected) return; clearFace(); const obj = selected; select(null); scene.remove(obj); objects.splice(objects.indexOf(obj), 1); obj.geometry.dispose(); obj.material.dispose(); renderHierarchy(); commitChange(); }
-function duplicate() { if (!selected) return; const data = serialize().objects.find(o => o.id === selected.userData.id); const clone = makeObject(data.type, { ...data, id: undefined, name: `${data.name} Copy`, geometry: data.geometry, position: [data.position[0] + 0.5, data.position[1], data.position[2] + 0.5] }); select(clone); commitChange(); }
-function focus() { if (!selected) return; const box = new THREE.Box3().setFromObject(selected); const center = box.getCenter(new THREE.Vector3()); const size = box.getSize(new THREE.Vector3()).length(); orbit.target.copy(center); camera.position.copy(center).add(new THREE.Vector3(size * 1.3, size * 0.9, size * 1.3)); orbit.update(); }
-
-function activateMeshTool(tool) {
-  if (!selected) { alert('Select a mesh first.'); return; }
-  if (!editMode) toggleEditMode(true);
-  activeMeshTool = tool;
-  document.querySelectorAll('[data-action="extrude-face"],[data-action="inset-face"]').forEach(b => b.classList.toggle('active', b.dataset.action === tool + '-face'));
-  $('#selection-status').textContent = tool === 'extrude' ? 'EXTRUDE · Click and drag any surface, or drag the orange arrow' : 'INSET · Click a surface to inset';
+function serialize(){return {format:'forge-studio',version:3,objects:meshes.map(m=>({id:m.userData.id,kind:m.userData.kind,name:m.name,divisions:m.userData.divisions,quadGrid:m.userData.quadGrid,position:m.position.toArray(),rotation:[m.rotation.x,m.rotation.y,m.rotation.z],scale:m.scale.toArray(),color:'#'+m.material.color.getHexString(),roughness:m.material.roughness,metalness:m.material.metalness,...(m.userData.edited?{positions:Array.from(m.geometry.attributes.position.array),indices:m.geometry.index?Array.from(m.geometry.index.array):null}:{})}))};}
+function clear(){clearFace();transform.detach();selected=null;for(const m of meshes){scene.remove(m);m.geometry.dispose();m.material.dispose();}meshes.length=0;}
+function restore(data){if(!data||!Array.isArray(data.objects)||data.objects.length>2000)throw Error('Invalid project');restoring=true;clear();for(const d of data.objects)make(d.kind||'Cube',d);choose(meshes[0]||null);restoring=false;renderObjects();}
+function snapshot(label){if(restoring)return;const value=JSON.stringify(serialize());if(history[historyIndex]?.value===value)return;history=history.slice(0,historyIndex+1);history.push({value,label});if(history.length>60)history.shift();historyIndex=history.length-1;$('history-items').textContent=label;}
+function undo(){if(historyIndex>0){restore(JSON.parse(history[--historyIndex].value));$('history-items').textContent='Undo · '+history[historyIndex].label;}}
+function redo(){if(historyIndex<history.length-1){restore(JSON.parse(history[++historyIndex].value));$('history-items').textContent='Redo · '+history[historyIndex].label;}}
+function choose(m){clearFace();selected=m;transform.detach();if(m&&mode==='object')transform.attach(m);transform.visible=mode==='object'&&!!m;updateInspector();renderObjects();status(m?m.name:'Nothing selected');}
+function status(message){$('selection-status').textContent=message;}
+function renderObjects(){const q=$('search').value.toLowerCase();$('objects').replaceChildren();for(const m of meshes.filter(x=>x.name.toLowerCase().includes(q))){const b=document.createElement('button');b.className='object '+(selected===m?'selected':'');b.innerHTML='<span>▣</span><b></b><small></small>';b.children[1].textContent=m.name;b.children[2].textContent=m.userData.kind;b.onclick=()=>choose(m);$('objects').appendChild(b);}$('stats').textContent=meshes.length+' objects · '+meshes.reduce((n,m)=>n+m.geometry.attributes.position.count,0).toLocaleString()+' vertices';}
+function updateInspector(){if(!selected){$('inspector').innerHTML='<p class="muted">Select an object to inspect its properties.</p>';return;}const m=selected;
+ $('inspector').innerHTML=`<label class="field-label">OBJECT NAME</label><input id="object-name"><div class="prop-head">TRANSFORM <span>STUDS</span></div><div id="transform-fields"></div><div class="prop-head">MATERIAL</div><div class="material-row"><label>Base color</label><input type="color" id="color"></div><div class="material-row"><label>Roughness</label><input type="range" id="roughness" min="0" max="1" step=".01"></div><div class="material-row"><label>Metallic</label><input type="range" id="metalness" min="0" max="1" step=".01"></div><div class="prop-head">MESH</div><p class="muted">${m.geometry.attributes.position.count.toLocaleString()} render vertices · ${m.userData.divisions} subdivisions</p>`;
+ $('object-name').value=m.name;$('object-name').onchange=e=>{m.name=e.target.value;renderObjects();snapshot('Rename object');};
+ for(const field of ['position','rotation','scale']){const row=document.createElement('div');row.className='xyz-row';row.innerHTML='<label>'+field+'</label>';for(const [i,axis] of ['x','y','z'].entries()){const wrap=document.createElement('div');wrap.className='xyz';const input=document.createElement('input');input.type='number';input.step='.1';input.value=(field==='rotation'?THREE.MathUtils.radToDeg(m.rotation[axis]):m[field][axis]).toFixed(2);const lbl=document.createElement('span');lbl.textContent=axis.toUpperCase();wrap.append(lbl,input);input.onchange=()=>{const n=Number(input.value);if(!Number.isFinite(n))return;m[field][axis]=field==='rotation'?THREE.MathUtils.degToRad(n):n;snapshot('Edit '+field);};row.append(wrap);}$('transform-fields').append(row);}
+ $('color').value='#'+m.material.color.getHexString();$('color').oninput=e=>m.material.color.set(e.target.value);$('color').onchange=()=>snapshot('Change color');
+ for(const k of ['roughness','metalness']){$(k).value=m.material[k];$(k).oninput=e=>m.material[k]=Number(e.target.value);$(k).onchange=()=>snapshot('Change material');}
 }
-function clearFace() {
-  dragFace = null;
-  faceIndex = -1;
-  faceGroup = null;
-  if (faceHandle) { scene.remove(faceHandle); faceHandle.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); faceHandle = null; }
-  if (faceHighlight) {
-    scene.remove(faceHighlight);
-    faceHighlight.geometry.dispose();
-    faceHighlight.material.dispose();
-    faceHighlight = null;
-  }
+function setMode(m){mode=m;clearFace();transform.detach();if(selected&&mode==='object')transform.attach(selected);transform.visible=mode==='object'&&!!selected;$('mode').textContent=mode==='object'?'OBJECT MODE ▾':'EDIT MODE ▾';$('selection-mode').textContent=mode==='object'?'Object selection':'Surface selection · Quads';if(mode==='object'&&['extrude','inset','sculpt'].includes(tool))setTool('select');status(mode==='edit'?'Click a quad to select it · E extrude · I inset':'Object mode');}
+function setTool(t){tool=t;if(['extrude','inset','sculpt'].includes(t)&&mode!=='edit')setMode('edit');document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===t));if(['move','rotate','scale'].includes(t)){transform.setMode(t==='move'?'translate':t);transform.visible=mode==='object'&&!!selected;}else transform.visible=false;$('tool-message').textContent=t==='extrude'?'EXTRUDE · Click and drag a quad. Camera stays locked while dragging.':t==='sculpt'?'SCULPT · Drag over the mesh to raise its surface. Adjust radius and strength on the right.':t==='inset'?'INSET · Click a quad to inset it.':'ACTIVE TOOL · '+toolNames[t];}
+function triangle(mesh,index){const g=mesh.geometry,p=g.attributes.position;return [0,1,2].map(j=>new THREE.Vector3().fromBufferAttribute(p,g.index?g.index.getX(index*3+j):index*3+j));}
+function face(mesh,index){const tris=mesh.geometry.index?mesh.geometry.index.count/3:mesh.geometry.attributes.position.count/3;
+ if(mesh.userData.quadGrid&&index>=0&&index<tris){const first=index-index%2;const ids=[first,first+1];const edges=new Map();for(const id of ids){const t=triangle(mesh,id);for(let j=0;j<3;j++){const a=t[j],b=t[(j+1)%3],k=[vkey(a),vkey(b)].sort().join('|');if(edges.has(k))edges.delete(k);else edges.set(k,[a,b]);}}const outline=[...edges.values()],unique=new Map();for(const [a,b] of outline){unique.set(vkey(a),a);unique.set(vkey(b),b);}const t=triangle(mesh,first),normal=t[1].clone().sub(t[0]).cross(t[2].clone().sub(t[0])).normalize();return {ids,edges:outline,vertices:[...unique.values()],normal};}
+ const t=triangle(mesh,index),normal=t[1].clone().sub(t[0]).cross(t[2].clone().sub(t[0])).normalize();return {ids:[index],edges:[[t[0],t[1]],[t[1],t[2]],[t[2],t[0]]],vertices:t,normal};
 }
-function toggleEditMode(force = null) {
-  editMode = force == null ? !editMode : force;
-  orbit.enablePan = !editMode;
-  if (!editMode) activeMeshTool = 'select';
-  clearFace();
-  document.querySelector('[data-action="edit-mode"]').classList.toggle('active', editMode);
-  transform.enabled = !editMode;
-  transform.visible = !editMode;
-  $('#edit-tip').classList.toggle('hidden', !editMode);
-  $('#selection-status').textContent = editMode ? 'EDIT MODE · Subdivide cube for square regions · Choose Extrude' : (selected?.name || 'No selection');
+function clearFace(){selectedFace=null;if(overlay){scene.remove(overlay);overlay.geometry.dispose();overlay.material.dispose();overlay=null;}}
+function highlight(index){clearFace();if(!selected||index==null)return;const f=face(selected,index);selectedFace={index,region:f};const pts=f.ids.flatMap(i=>triangle(selected,i).flatMap(v=>v.toArray()));const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));overlay=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0xe8a45e,transparent:true,opacity:.48,depthTest:false,side:THREE.DoubleSide}));overlay.position.copy(selected.position);overlay.quaternion.copy(selected.quaternion);overlay.scale.copy(selected.scale);overlay.renderOrder=1000;scene.add(overlay);status(f.ids.length===2?'Quad selected · E extrude · I inset':'Surface selected · E extrude · I inset');}
+function regionExtrusion(source,index,amount,inset=0){
+ const region=face(selected,index),g=source.index?source.toNonIndexed():source.clone(),positions=Array.from(g.attributes.position.array);
+ const selectedIds=new Set(region.ids),out=[];
+ const move=v=>v.clone().addScaledVector(region.normal,amount);
+ const centroid=region.vertices.reduce((a,v)=>a.add(v),new THREE.Vector3()).multiplyScalar(1/region.vertices.length);
+ const shrink=v=>v.clone().lerp(centroid,inset);
+ const add=(a,b,c)=>out.push(...a.toArray(),...b.toArray(),...c.toArray());
+ for(let i=0;i<positions.length/9;i++){const t=[0,1,2].map(j=>new THREE.Vector3(...positions.slice(i*9+j*3,i*9+j*3+3)));if(selectedIds.has(i)){add(...t.map(v=>move(shrink(v))));}else add(...t);}
+ for(const [a,b] of region.edges){const a2=move(shrink(a)),b2=move(shrink(b));add(a,b,b2);add(a,b2,a2);}
+ g.dispose();const result=new THREE.BufferGeometry();result.setAttribute('position',new THREE.Float32BufferAttribute(out,3));result.computeVertexNormals();return result;
 }
-function faceRegion(mesh, index) {
-  if (mesh.userData.quadGrid) {
-    const pair = index % 2 === 0 ? index + 1 : index - 1;
-    const t = trianglePositions(mesh,index), u = trianglePositions(mesh,pair);
-    const normal = t[1].clone().sub(t[0]).cross(t[2].clone().sub(t[0])).normalize();
-    const key = v => v.toArray().map(x => Math.round(x*10000)).join(',');
-    const edgeMap = new Map();
-    for (const verts of [t,u]) for (let j=0;j<3;j++) {
-      const a=verts[j],b=verts[(j+1)%3], id=[key(a),key(b)].sort().join('|');
-      if (edgeMap.has(id)) edgeMap.delete(id); else edgeMap.set(id,[a,b]);
-    }
-    const edges=[...edgeMap.values()];
-    const vertices=[]; const seen=new Set();
-    for (const [a,b] of edges) for (const v of [a,b]) if (!seen.has(key(v))) { seen.add(key(v)); vertices.push(v); }
-    return {faces:[Math.min(index,pair),Math.max(index,pair)],edges,vertices,normal};
-  }
-  if (mesh.userData.subdivisions > 0) {
-    const tri = trianglePositions(mesh,index);
-    const normal = tri[1].clone().sub(tri[0]).cross(tri[2].clone().sub(tri[0])).normalize();
-    return { faces: [index], edges: [[tri[0],tri[1]],[tri[1],tri[2]],[tri[2],tri[0]]], vertices: tri, normal };
-  }
-  // Grow a connected coplanar region so a cube side behaves as a single quad.
-  const geometry = mesh.geometry;
-  const count = geometry.index ? geometry.index.count / 3 : geometry.getAttribute('position').count / 3;
-  const faces = [];
-  const origin = trianglePositions(mesh, index);
-  const n = origin[1].clone().sub(origin[0]).cross(origin[2].clone().sub(origin[0])).normalize();
-  const plane = n.dot(origin[0]);
-  const key = v => v.toArray().map(x => Math.round(x * 10000)).join(',');
-  const region = new Set([index]);
-  const candidates = [];
-  for (let i = 0; i < count; i++) {
-    const t = trianglePositions(mesh, i);
-    const normal = t[1].clone().sub(t[0]).cross(t[2].clone().sub(t[0])).normalize();
-    if (normal.dot(n) > 0.999 && t.every(v => Math.abs(n.dot(v) - plane) < 0.0001)) candidates.push({ i, keys: t.map(key) });
-  }
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const f of candidates) {
-      if (region.has(f.i)) continue;
-      if ([...region].some(i => {
-        const other = candidates.find(c => c.i === i);
-        return other && f.keys.filter(k => other.keys.includes(k)).length >= 2;
-      })) { region.add(f.i); changed = true; }
-    }
-  }
-  const included = [...region].sort((a,b) => a-b);
-  const edgeMap = new Map();
-  for (const i of included) {
-    const t = trianglePositions(mesh, i);
-    for (let j = 0; j < 3; j++) {
-      const a = t[j], b = t[(j+1)%3];
-      const k1 = key(a), k2 = key(b);
-      const id = [k1,k2].sort().join('|');
-      if (edgeMap.has(id)) edgeMap.delete(id); else edgeMap.set(id, [a,b]);
-    }
-  }
-  const edges = [...edgeMap.values()];
-  const vertices = [];
-  const seen = new Set();
-  for (const [a,b] of edges) for (const v of [a,b]) if (!seen.has(key(v))) { vertices.push(v); seen.add(key(v)); }
-  return { faces: included, edges, vertices, normal: n };
-}
-function trianglePositions(mesh, index) {
-  const geometry = mesh.geometry;
-  const attribute = geometry.getAttribute('position');
-  const vertices = [];
-  for (let i = 0; i < 3; i++) {
-    const vertexIndex = geometry.index ? geometry.index.getX(index * 3 + i) : index * 3 + i;
-    vertices.push(new THREE.Vector3().fromBufferAttribute(attribute, vertexIndex));
-  }
-  return vertices;
-}
-function markFace(index) {
-  clearFace();
-  if (!selected || index == null) return;
-  faceIndex = index;
-  faceGroup = faceRegion(selected, index);
-  const positions = faceGroup.faces.flatMap(i => trianglePositions(selected, i).flatMap(v => v.toArray()));
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.computeVertexNormals();
-  faceHighlight = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
-    color: 0x6caeff, transparent: true, opacity: 0.48, side: THREE.DoubleSide, depthTest: false
-  }));
-  faceHighlight.position.copy(selected.position);
-  faceHighlight.quaternion.copy(selected.quaternion);
-  faceHighlight.scale.copy(selected.scale);
-  faceHighlight.renderOrder = 999;
-  scene.add(faceHighlight);
-  const center = faceGroup.vertices.reduce((a,v) => a.add(v), new THREE.Vector3()).multiplyScalar(1 / faceGroup.vertices.length);
-  const world = selected.localToWorld(center.clone());
-  const direction = faceGroup.normal.clone().transformDirection(selected.matrixWorld);
-  faceHandle = new THREE.Group();
-  const arrow = new THREE.ArrowHelper(direction, world, 0.85, 0xffb45c, 0.22, 0.13);
-  arrow.userData.faceArrow = true;
-  arrow.traverse(o => { o.userData.faceArrow = true; });
-  faceHandle.add(arrow);
-  scene.add(faceHandle);
-  $('#selection-status').textContent = faceGroup.faces.length === 2 ? 'Quad selected · Drag to extrude square' : 'Surface selected · Drag to extrude';
-}
-
-function subdivideMesh() {
-  if (!selected) { alert('Select a mesh to add detail.'); return; }
-  if ((selected.userData.subdivisions || 0) >= 4) { alert('Maximum detail level reached.'); return; }
-  if (selected.userData.type === 'Box' && !selected.userData.edited) {
-    const level = (selected.userData.subdivisions || 0) + 1;
-    const segments = 2 ** level;
-    const g = new THREE.BoxGeometry(1.8,1.8,1.8,segments,segments,segments);
-    clearFace();
-    selected.geometry.dispose(); selected.geometry = g;
-    selected.userData.subdivisions = level;
-    selected.userData.quadGrid = true;
-    selected.userData.edited = true;
-    commitChange(); renderHierarchy();
-    $('#selection-status').textContent = segments + ' × ' + segments + ' QUADS per cube side · Select Extrude and drag one square';
-    return;
-  }
-  const geometry = selected.geometry;
-  const position = geometry.getAttribute('position');
-  const count = geometry.index ? geometry.index.count / 3 : position.count / 3;
-  if (count * 4 > 120000) { alert('Mesh is too dense to subdivide further.'); return; }
-  const result = [];
-  const push = (a,b,c) => result.push(...a.toArray(),...b.toArray(),...c.toArray());
-  for (let i = 0; i < count; i++) {
-    const [a,b,c] = trianglePositions(selected,i);
-    const ab = a.clone().add(b).multiplyScalar(.5);
-    const bc = b.clone().add(c).multiplyScalar(.5);
-    const ca = c.clone().add(a).multiplyScalar(.5);
-    push(a,ab,ca); push(ab,b,bc); push(ca,bc,c); push(ab,bc,ca);
-  }
-  const replacement = new THREE.BufferGeometry();
-  replacement.setAttribute('position',new THREE.Float32BufferAttribute(result,3));
-  replacement.computeVertexNormals();
-  clearFace(); selected.geometry.dispose(); selected.geometry = replacement;
-  selected.userData.edited = true;
-  selected.userData.quadGrid = false;
-  selected.userData.subdivisions = (selected.userData.subdivisions || 0) + 1;
-  commitChange(); renderHierarchy();
-  $('#selection-status').textContent = 'Subdivision level ' + selected.userData.subdivisions;
-}
-
-function makeExtrusionBase(source, index, moveOnly) {
-  const region = faceRegion(selected, index);
-  const g = source.index ? source.toNonIndexed() : source.clone();
-  const positions = Array.from(g.getAttribute('position').array);
-  const topIndices = [];
-  for (const face of region.faces) for (let j=0;j<3;j++) topIndices.push(face*3+j);
-  if (!moveOnly) {
-    // Each boundary edge becomes two side triangles. Shared interior edges are excluded.
-    for (const [a,b] of region.edges) {
-      const at = positions.length/3;
-      positions.push(...a.toArray(),...b.toArray(),...b.toArray());
-      positions.push(...a.toArray(),...b.toArray(),...a.toArray());
-      topIndices.push(at+2, at+4, at+5);
-    }
-  }
-  g.dispose();
-  return { positions, normal: region.normal, topIndices };
-}
-
-function faceOperation(kind) {
-  if (!editMode || !selected || faceIndex < 0) {
-    alert('Select an object, turn on Faces (Tab), then click a triangle on its surface.');
-    return;
-  }
-  const source = selected.geometry;
-  const triangleCount = source.index ? source.index.count / 3 : source.getAttribute('position').count / 3;
-  if (faceIndex >= triangleCount) return;
-  const original = source.index ? source.toNonIndexed() : source.clone();
-  const positions = Array.from(original.getAttribute('position').array);
-  const triangle = trianglePositions(selected, faceIndex);
-  const center = triangle[0].clone().add(triangle[1]).add(triangle[2]).multiplyScalar(1 / 3);
-  const normal = triangle[1].clone().sub(triangle[0]).cross(triangle[2].clone().sub(triangle[0])).normalize();
-  const top = kind === 'extrude'
-    ? triangle.map(v => v.clone().addScaledVector(normal, 0.5))
-    : triangle.map(v => center.clone().lerp(v, 0.65));
-  const addTriangle = (a, b, c) => positions.push(...a.toArray(), ...b.toArray(), ...c.toArray());
-  positions.splice(faceIndex * 9, 9);
-  addTriangle(top[0], top[1], top[2]);
-  for (let i = 0; i < 3; i++) {
-    const next = (i + 1) % 3;
-    addTriangle(triangle[i], triangle[next], top[next]);
-    addTriangle(triangle[i], top[next], top[i]);
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.computeVertexNormals();
-  selected.geometry.dispose();
-  selected.geometry = geometry;
-  selected.userData.edited = true;
-  selected.userData.quadGrid = false;
-  original.dispose();
-  clearFace();
-  renderHierarchy();
-  commitChange();
-  $('#selection-status').textContent = kind === 'extrude' ? 'Face extruded · Select another triangle' : 'Face inset · Select another triangle';
-}
-
-function download(name, blob) { const a = document.createElement('a'); const url = URL.createObjectURL(blob); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
-async function exportGLB() { const group = new THREE.Group(); for (const o of objects) group.add(o.clone()); if (!objects.length) return alert('Add an object before exporting.'); try { const buffer = await new GLTFExporter().parseAsync(group, { binary: true, onlyVisible: true }); download('forge-scene.glb', new Blob([buffer], { type: 'model/gltf-binary' })); } catch (error) { alert(`Export failed: ${error.message}`); } }
-function action(name) { switch (name) { case 'new': if (objects.length && !confirm('Start a new scene? Download your project first if you want to keep it.')) return; clearObjects(); renderHierarchy(); commitChange(); break; case 'save': download('forge-project.json', new Blob([JSON.stringify(serialize(), null, 2)], { type: 'application/json' })); break; case 'load': $('#file-picker').click(); break; case 'export': exportGLB(); break; case 'undo': undo(); break; case 'redo': redo(); break; case 'delete': remove(); break; case 'duplicate': duplicate(); break; case 'frame': focus(); break; case 'edit-mode': toggleEditMode(); break; case 'subdivide': subdivideMesh(); break; case 'extrude-face': activateMeshTool('extrude'); break; case 'inset-face': activateMeshTool('inset'); break; case 'add-menu': $('#add-menu').classList.toggle('hidden'); break; case 'toggle-grid': grid.visible = !grid.visible; axes.visible = grid.visible; break; case 'toggle-wire': wireframe = !wireframe; objects.forEach(o => o.material.wireframe = wireframe); break; case 'toggle-projection': camera.zoom = camera.zoom === 1 ? 1.7 : 1; camera.updateProjectionMatrix(); $('#view-name').textContent = camera.zoom === 1 ? 'Perspective' : 'Zoomed perspective'; break; case 'menu-file': showMenu('file'); break; case 'menu-edit': showMenu('edit'); break; case 'menu-add': showMenu('add'); break; case 'menu-view': showMenu('view'); break; } }
-document.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => action(button.dataset.action)));
-document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => { transform.setMode(button.dataset.mode); document.querySelectorAll('[data-mode]').forEach(el => el.classList.toggle('active', el === button)); }));
-$('#add-object').onclick = () => action('add-menu');
-document.querySelectorAll('[data-add]').forEach(button => button.onclick = () => add(button.dataset.add));
-$('#object-search').oninput = renderHierarchy;
-$('#object-name').addEventListener('change', event => { if (!selected) return; selected.name = event.target.value.trim() || selected.name; renderHierarchy(); syncInspector(); commitChange(); });
-document.querySelectorAll('[data-field]').forEach(input => input.addEventListener('change', () => { if (!selected) return; const axis = ['x', 'y', 'z'][Number(input.dataset.axis)]; const value = Number(input.value); if (!Number.isFinite(value)) return; if (input.dataset.field === 'rotation') selected.rotation[axis] = THREE.MathUtils.degToRad(value); else selected[input.dataset.field][axis] = input.dataset.field === 'scale' ? Math.max(0.001, value) : value; syncInspector(); commitChange(); }));
-$('#object-color').oninput = e => { if (selected) selected.material.color.set(e.target.value); };
-$('#object-color').onchange = commitChange;
-for (const field of ['metalness', 'roughness']) { $(`#${field}`).oninput = e => { if (selected) selected.material[field] = Number(e.target.value); }; $(`#${field}`).onchange = commitChange; }
-$('#file-picker').onchange = async e => { const file = e.target.files[0]; if (!file) return; try { const data = JSON.parse(await file.text()); if (!data || !Array.isArray(data.objects)) throw Error('Not a Forge project'); restore(data); commitChange(); } catch (error) { alert(`Could not open project: ${error.message}`); } e.target.value = ''; };
-const menuGroups = {
-  file: [['New scene','new'],['Save project','save'],['Open project','load'],['Export GLB','export']],
-  edit: [['Undo','undo'],['Redo','redo'],['Subdivide mesh','subdivide'],['Duplicate','duplicate'],['Delete','delete'],['Toggle face mode','edit-mode']],
-  add: [['Cube','add:Box'],['Sphere','add:Sphere'],['Cylinder','add:Cylinder'],['Cone','add:Cone'],['Torus','add:Torus'],['Plane','add:Plane']],
-  view: [['Frame selection','frame'],['Toggle grid','toggle-grid'],['Toggle wireframe','toggle-wire'],['Zoom view','toggle-projection']]
-};
-function showMenu(group) {
-  const panel = $('#menu-popover');
-  if (panel.dataset.group === group && !panel.classList.contains('hidden')) { panel.classList.add('hidden'); return; }
-  panel.dataset.group = group;
-  panel.innerHTML = '';
-  for (const [label, command] of menuGroups[group]) {
-    const button = document.createElement('button');
-    button.textContent = label;
-    button.onclick = () => { panel.classList.add('hidden'); command.startsWith('add:') ? add(command.slice(4)) : action(command); };
-    panel.appendChild(button);
-  }
-  panel.classList.remove('hidden');
-}
-document.addEventListener('pointerdown', event => {
-  if (!event.target.closest('.main-menus, .menu-popover')) $('#menu-popover').classList.add('hidden');
-});
-let pointerDown = null; let suppressClick = false;
-renderer.domElement.addEventListener('pointerdown', event => {
-  if (event.button !== 0) return;
-  pointerDown = { x: event.clientX, y: event.clientY };
-  if (editMode && selected) {
-    const rect = renderer.domElement.getBoundingClientRect();
-    pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
-    raycaster.setFromCamera(pointer, camera);
-    const hits = raycaster.intersectObject(selected, false);
-    const handleHit = faceHandle && raycaster.intersectObjects(faceHandle.children, true).length > 0;
-    const hitFace = hits[0]?.faceIndex;
-    if (activeMeshTool === 'inset' && hitFace != null) { markFace(hitFace); faceOperation('inset'); pointerDown = null; return; }
-    if ((activeMeshTool === 'extrude' && hitFace != null) || (handleHit && faceIndex >= 0)) {
-      if (!handleHit) markFace(hitFace);
-      dragFace = { startY: event.clientY, startX: event.clientX, started: false, shift: event.shiftKey, face: faceIndex, original: selected.geometry.clone(), base: null };
-      orbit.enabled = false;
-      renderer.domElement.setPointerCapture(event.pointerId);
-    }
-  }
-});
-renderer.domElement.addEventListener('pointermove', event => {
-  if (!dragFace || !selected) return;
-  const distance = Math.hypot(event.clientX - dragFace.startX, event.clientY - dragFace.startY);
-  if (distance < 4 && !dragFace.started) return;
-  if (!dragFace.started) {
-    dragFace.started = true;
-    dragFace.base = makeExtrusionBase(dragFace.original, dragFace.face, dragFace.shift);
-  }
-  const amount = Math.max(-8, Math.min(8, (dragFace.startY - event.clientY) * 0.018));
-  const next = new Float32Array(dragFace.base.positions);
-  for (const index of dragFace.base.topIndices) {
-    const origin = index * 3;
-    next[origin] += dragFace.base.normal.x * amount;
-    next[origin + 1] += dragFace.base.normal.y * amount;
-    next[origin + 2] += dragFace.base.normal.z * amount;
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(next, 3));
-  geometry.computeVertexNormals();
-  selected.geometry.dispose(); selected.geometry = geometry;
-  selected.userData.edited = true;
-  if (faceHighlight) faceHighlight.visible = false;
-  $('#selection-status').textContent = 'Drag extrusion · ' + amount.toFixed(2) + ' studs';
-});
-renderer.domElement.addEventListener('pointercancel', () => { if (dragFace) finishFaceDrag(); orbit.enabled = true; });
-function finishFaceDrag() {
-  if (!dragFace) return;
-  const changed = dragFace.started;
-  if (changed) selected.userData.quadGrid = false;
-  dragFace.original.dispose();
-  dragFace = null;
-  orbit.enabled = true;
-  if (changed) { suppressClick = true; pointerDown = null; clearFace(); renderHierarchy(); commitChange(); $('#selection-status').textContent = 'Extrusion committed · Ctrl+Z to undo'; }
-}
-renderer.domElement.addEventListener('pointerup', () => { if (dragFace) finishFaceDrag(); });
-renderer.domElement.addEventListener('pointerup', event => { if (event.button !== 0 || suppressClick || !pointerDown || transform.dragging || dragFace?.started) { pointerDown = null; suppressClick = false; return; } const distance = Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y); pointerDown = null; if (distance > 5) return; const rect = renderer.domElement.getBoundingClientRect(); pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1; pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1; raycaster.setFromCamera(pointer, camera); const hits = raycaster.intersectObjects(objects, false); if (editMode && selected && hits[0]?.object === selected) markFace(hits[0].faceIndex); else select(hits.length ? hits[0].object : null); });
-window.addEventListener('keydown', event => { const typing = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName); if (typing) return; const modifier = event.ctrlKey || event.metaKey; if (modifier && event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? redo() : undo(); } else if (modifier && event.key.toLowerCase() === 'y') { event.preventDefault(); redo(); } else if (modifier && event.key === '2') { event.preventDefault(); subdivideMesh(); } else if (modifier && event.key.toLowerCase() === 'd') { event.preventDefault(); duplicate(); } else if (event.key === 'Delete' || event.key === 'Backspace') remove(); else if (event.key === 'Tab') { event.preventDefault(); toggleEditMode(); } else if (editMode && event.key.toLowerCase() === 'e') faceOperation('extrude'); else if (editMode && event.key.toLowerCase() === 'i') faceOperation('inset'); else if (event.key.toLowerCase() === 'f') focus(); else if (['g', 'r', 's'].includes(event.key.toLowerCase())) { const mode = ({ g: 'translate', r: 'rotate', s: 'scale' })[event.key.toLowerCase()]; document.querySelector(`[data-mode="${mode}"]`).click(); } });
-const resizeObserver = new ResizeObserver(() => { const w = viewport.clientWidth, h = viewport.clientHeight; if (!w || !h) return; camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h, false); }); resizeObserver.observe(viewport);
-makeObject('Box', { name: 'Starter Cube', position: [0, 0.9, 0], color: '#819fca' });
-select(objects[0]); commitChange();
-renderer.setAnimationLoop(() => { orbit.update(); renderer.render(scene, camera); });
+function replaceGeometry(g){selected.geometry.dispose();selected.geometry=g;selected.userData.edited=true;selected.userData.quadGrid=false;clearFace();renderObjects();}
+function extrudeOnce(){if(!selectedFace||!selected)return status('Select a surface first');const g=regionExtrusion(selected.geometry,selectedFace.index,Number($('distance').value));replaceGeometry(g);snapshot('Extrude surface');}
+function insetOnce(){if(!selectedFace||!selected)return status('Select a surface first');const g=regionExtrusion(selected.geometry,selectedFace.index,0,.22);replaceGeometry(g);snapshot('Inset surface');}
+function subdivide(){if(!selected)return status('Select an object first');if(selected.userData.kind!=='Cube'||selected.userData.edited)return status('Grid subdivision currently supports untouched cubes only');const div=Number($('divisions').value);selected.geometry.dispose();selected.geometry=primitive('Cube',div);selected.userData.divisions=div;selected.userData.quadGrid=true;clearFace();snapshot('Set cube grid to '+div+' × '+div);renderObjects();status('Cube now has '+div+' × '+div+' selectable quads per side');}
+function sculptAt(hit){if(!selected||!hit)return;const m=selected;const radius=Number($('radius').value),strength=Number($('strength').value);const g=m.geometry;if(g.index){const expanded=g.toNonIndexed();g.dispose();m.geometry=expanded;}const p=m.geometry.attributes.position,local=m.worldToLocal(hit.point.clone());const normal=hit.face.normal.clone().normalize();for(let i=0;i<p.count;i++){const v=new THREE.Vector3().fromBufferAttribute(p,i);const d=v.distanceTo(local);if(d>radius)continue;const fall=Math.pow(1-d/radius,2);v.addScaledVector(normal,strength*fall*.16);p.setXYZ(i,v.x,v.y,v.z);}p.needsUpdate=true;m.geometry.computeVertexNormals();m.geometry.computeBoundingSphere();m.geometry.computeBoundingBox();m.userData.edited=true;m.userData.quadGrid=false;sculptDirty=true;}
+function add(kind){choose(make(kind));snapshot('Add '+kind);}
+function remove(){if(!selected)return;const m=selected;choose(null);meshes.splice(meshes.indexOf(m),1);scene.remove(m);m.geometry.dispose();m.material.dispose();renderObjects();snapshot('Delete object');}
+function duplicate(){if(!selected)return;const d=serialize().objects.find(o=>o.id===selected.userData.id);delete d.id;d.name=selected.name+' Copy';d.position=[d.position[0]+.5,d.position[1],d.position[2]];choose(make(d.kind,d));snapshot('Duplicate object');}
+function frame(){const target=selected?selected.getWorldPosition(new THREE.Vector3()):new THREE.Vector3(0,1,0);orbit.target.copy(target);camera.position.copy(target).add(new THREE.Vector3(4,3,5));orbit.update();}
+function download(name,blob){const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
+async function exportGLB(){const group=new THREE.Group();for(const m of meshes)group.add(m.clone());try{const result=await new GLTFExporter().parseAsync(group,{binary:true});download('forge-model.glb',new Blob([result],{type:'model/gltf-binary'}));status('GLB exported for Roblox Studio');}catch(e){alert('Export failed: '+e.message);} }
+const commands={save:()=>download('forge-project.json',new Blob([JSON.stringify(serialize(),null,2)],{type:'application/json'})),open:()=>$('open-file').click(),export:exportGLB,new:()=>{if(!confirm('Start a new scene? Unsaved work will be lost.'))return;clear();history=[];historyIndex=-1;add('Cube');},undo,redo,mode:()=>setMode(mode==='object'?'edit':'object'),grid:()=>{grid.visible=!grid.visible;axes.visible=grid.visible;},wire:()=>{wire=!wire;meshes.forEach(m=>m.material.wireframe=wire);},frame,subdivide,'add-cube':()=>add('Cube'),'add-sphere':()=>add('Sphere'),'add-cylinder':()=>add('Cylinder'),'add-cone':()=>add('Cone'),'add-torus':()=>add('Torus'),'add-plane':()=>add('Plane'),duplicate,delete:remove,extrude:extrudeOnce,inset:insetOnce};
+const menuItems={File:[['New scene','new'],['Open project','open'],['Save project','save'],['Export GLB','export']],Edit:[['Undo','undo'],['Redo','redo'],['Duplicate','duplicate'],['Delete','delete']],Add:[['Cube','add-cube'],['Sphere','add-sphere'],['Cylinder','add-cylinder'],['Cone','add-cone'],['Torus','add-torus'],['Plane','add-plane']],Mesh:[['Object / Edit mode','mode'],['Apply quad grid','subdivide'],['Extrude selected face','extrude'],['Inset selected face','inset']],View:[['Frame selection','frame'],['Toggle grid','grid'],['Toggle wireframe','wire']]};
+document.addEventListener('click',e=>{const c=e.target.closest('[data-command]');if(c){commands[c.dataset.command]?.();$('popup').classList.add('hidden');}const t=e.target.closest('[data-tool]');if(t)setTool(t.dataset.tool);const w=e.target.closest('[data-workspace]');if(w){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b===w));setTool(w.dataset.workspace==='Sculpting'?'sculpt':'select');}const menu=e.target.closest('[data-menu]');if(menu){const p=$('popup');p.replaceChildren();for(const [label,command] of menuItems[menu.dataset.menu]){const b=document.createElement('button');b.textContent=label;b.onclick=()=>{commands[command]?.();p.classList.add('hidden');};p.appendChild(b);}const rect=menu.getBoundingClientRect();p.style.left=rect.left+'px';p.style.top=rect.bottom+3+'px';p.classList.remove('hidden');}else if(!e.target.closest('#popup'))$('popup').classList.add('hidden');});
+$('search').oninput=renderObjects;
+for(const [id,label,unit] of [['divisions','divisions-label',' × '],['distance','distance-label',' studs'],['radius','radius-label',' studs'],['strength','strength-label','']])$(id).oninput=e=>$(label).textContent=id==='divisions'?e.target.value+' × '+e.target.value:e.target.value+unit;
+$('open-file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{restore(JSON.parse(await f.text()));history=[];historyIndex=-1;snapshot('Open project');}catch(error){alert('Could not open project: '+error.message);}e.target.value='';};
+function hitTest(event){const rect=renderer.domElement.getBoundingClientRect();pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);return raycaster.intersectObjects(meshes,false);}
+renderer.domElement.addEventListener('pointerdown',e=>{if(e.button!==0)return;const hits=hitTest(e),hit=hits[0];if(mode==='edit'&&selected&&hit?.object===selected){if(tool==='sculpt'){drag={type:'sculpt',pointerId:e.pointerId};orbit.enabled=false;renderer.domElement.setPointerCapture(e.pointerId);sculptAt(hit);return;}if(tool==='extrude'){highlight(hit.faceIndex);drag={type:'extrude',pointerId:e.pointerId,startY:e.clientY,index:hit.faceIndex,original:selected.geometry.clone(),moved:false};orbit.enabled=false;renderer.domElement.setPointerCapture(e.pointerId);return;}if(tool==='inset'){highlight(hit.faceIndex);insetOnce();return;}highlight(hit.faceIndex);return;}if(mode==='object'&&tool==='select')choose(hit?.object||null);});
+renderer.domElement.addEventListener('pointermove',e=>{if(!drag||!selected)return;if(drag.type==='sculpt'){const hit=hitTest(e).find(h=>h.object===selected);if(hit)sculptAt(hit);return;}if(drag.type==='extrude'){const delta=drag.startY-e.clientY;if(Math.abs(delta)<3&&!drag.moved)return;drag.moved=true;const distance=delta*.015;const g=regionExtrusion(drag.original,drag.index,distance);selected.geometry.dispose();selected.geometry=g;selected.userData.edited=true;if(overlay)overlay.visible=false;status('Extrude '+distance.toFixed(2)+' studs · Release to confirm');}});
+function endDrag(){if(!drag)return;const d=drag;drag=null;orbit.enabled=true;if(d.type==='extrude'){d.original.dispose();if(d.moved){selected.userData.quadGrid=false;clearFace();snapshot('Extrude quad');renderObjects();status('Extrusion committed · Ctrl+Z to undo');}else if(overlay)overlay.visible=true;}else if(sculptDirty){sculptDirty=false;clearFace();snapshot('Sculpt mesh');renderObjects();} }
+renderer.domElement.addEventListener('pointerup',endDrag);renderer.domElement.addEventListener('pointercancel',endDrag);
+window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA'].includes(document.activeElement?.tagName))return;const ctrl=e.ctrlKey||e.metaKey,k=e.key.toLowerCase();if(ctrl&&k==='z'){e.preventDefault();e.shiftKey?redo():undo();return;}if(ctrl&&k==='y'){e.preventDefault();redo();return;}if(ctrl&&k==='d'){e.preventDefault();duplicate();return;}if(e.key==='Tab'){e.preventDefault();commands.mode();return;}if(e.key==='Delete'){remove();return;}if(k==='f'){frame();return;}if(k==='e'){setTool('extrude');return;}if(k==='i'){setTool('inset');return;}if(k==='g'){setTool('move');return;}if(k==='r'){setTool('rotate');return;}if(k==='s'){setTool('scale');return;}if(k==='q'){setTool('select');return;}});
+new ResizeObserver(()=>{const w=$('viewport').clientWidth,h=$('viewport').clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);}).observe($('viewport'));
+add('Cube');renderer.setAnimationLoop(()=>{orbit.update();renderer.render(scene,camera);});
