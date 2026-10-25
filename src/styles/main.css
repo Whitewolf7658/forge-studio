@@ -701,3 +701,23 @@ button { cursor: pointer; }
 #viewport canvas { touch-action: none; }
 @media (max-width: 1100px) { .main-menus { margin-left: 6px; } .main-menus button { padding: 8px 5px; } }
 @media (max-width: 780px) { .main-menus { display: none; } .edit-tip { max-width: 260px; } }
+
+
+/* v0.5 professional workstation visual pass */
+:root { --forge-panel: #191e27; --forge-border: #343c4b; --forge-accent: #e5a55f; }
+.topbar { background: #191d25; border-bottom-color: #343a46; }
+.brand-mark { background: linear-gradient(145deg,#e3a866,#ab6938) !important; box-shadow: 0 2px 14px #d88b4533; }
+.version { color: #e8bc86 !important; border-color: #745339 !important; background: #382b24 !important; }
+.sidebar { background: #1b2029; border-left-color: #373f4e; }
+.panel { border-bottom-color: #363f4c; }
+.rail { background: #1a1f28; border-right-color: #363f4c; }
+.rail .tool:hover { background: #303a48; }
+.rail .tool.active, .rail .tool[data-action="extrude-face"].active, .rail .tool[data-action="inset-face"].active { background: #4c3a2a !important; border-color: #b87d46 !important; color: #ffd5a5 !important; }
+.viewport-header { background: #1a202a; border-bottom: 1px solid #303a49; }
+.menu-popover { background: #242933; border-color: #535d6d; }
+.menu-popover button:hover { background: #59412e; }
+.edit-tip { background: #252a33ed; border-color: #a77846; }
+.edit-tip strong { color: #ffc58c; }
+.object-row.selected { background: #45392d !important; border-color: #9e7149 !important; }
+input:focus { border-color: #b98552 !important; }
+@media (min-width: 1200px) { .sidebar { width: 355px; min-width: 355px; } }
