@@ -127,7 +127,7 @@ function toggleEditMode(force = null) {
   transform.enabled = !editMode;
   transform.visible = !editMode;
   $('#edit-tip').classList.toggle('hidden', !editMode);
-  $('#selection-status').textContent = editMode ? 'FACE MODE · Click a triangle · E extrude · I inset' : (selected?.name || 'No selection');
+  $('#selection-status').textContent = editMode ? 'EDIT MODE · Subdivide cube for square regions · Choose Extrude' : (selected?.name || 'No selection');
 }
 function faceRegion(mesh, index) {
   if (mesh.userData.quadGrid) {
@@ -229,7 +229,7 @@ function markFace(index) {
   arrow.traverse(o => { o.userData.faceArrow = true; });
   faceHandle.add(arrow);
   scene.add(faceHandle);
-  $('#selection-status').textContent = faceGroup.faces.length + ' triangles grouped as one surface · Drag to extrude';
+  $('#selection-status').textContent = faceGroup.faces.length === 2 ? 'Quad selected · Drag to extrude square' : 'Surface selected · Drag to extrude';
 }
 
 function subdivideMesh() {
@@ -365,7 +365,7 @@ function showMenu(group) {
 document.addEventListener('pointerdown', event => {
   if (!event.target.closest('.main-menus, .menu-popover')) $('#menu-popover').classList.add('hidden');
 });
-let pointerDown = null;
+let pointerDown = null; let suppressClick = false;
 renderer.domElement.addEventListener('pointerdown', event => {
   if (event.button !== 0) return;
   pointerDown = { x: event.clientX, y: event.clientY };
@@ -417,10 +417,10 @@ function finishFaceDrag() {
   dragFace.original.dispose();
   dragFace = null;
   orbit.enabled = true;
-  if (changed) { clearFace(); renderHierarchy(); commitChange(); $('#selection-status').textContent = 'Extrusion committed · Ctrl+Z to undo'; }
+  if (changed) { suppressClick = true; pointerDown = null; clearFace(); renderHierarchy(); commitChange(); $('#selection-status').textContent = 'Extrusion committed · Ctrl+Z to undo'; }
 }
 renderer.domElement.addEventListener('pointerup', () => { if (dragFace) finishFaceDrag(); });
-renderer.domElement.addEventListener('pointerup', event => { if (event.button !== 0 || !pointerDown || transform.dragging || dragFace?.started) { pointerDown = null; return; } const distance = Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y); pointerDown = null; if (distance > 5) return; const rect = renderer.domElement.getBoundingClientRect(); pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1; pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1; raycaster.setFromCamera(pointer, camera); const hits = raycaster.intersectObjects(objects, false); if (editMode && selected && hits[0]?.object === selected) markFace(hits[0].faceIndex); else select(hits.length ? hits[0].object : null); });
+renderer.domElement.addEventListener('pointerup', event => { if (event.button !== 0 || suppressClick || !pointerDown || transform.dragging || dragFace?.started) { pointerDown = null; suppressClick = false; return; } const distance = Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y); pointerDown = null; if (distance > 5) return; const rect = renderer.domElement.getBoundingClientRect(); pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1; pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1; raycaster.setFromCamera(pointer, camera); const hits = raycaster.intersectObjects(objects, false); if (editMode && selected && hits[0]?.object === selected) markFace(hits[0].faceIndex); else select(hits.length ? hits[0].object : null); });
 window.addEventListener('keydown', event => { const typing = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName); if (typing) return; const modifier = event.ctrlKey || event.metaKey; if (modifier && event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? redo() : undo(); } else if (modifier && event.key.toLowerCase() === 'y') { event.preventDefault(); redo(); } else if (modifier && event.key === '2') { event.preventDefault(); subdivideMesh(); } else if (modifier && event.key.toLowerCase() === 'd') { event.preventDefault(); duplicate(); } else if (event.key === 'Delete' || event.key === 'Backspace') remove(); else if (event.key === 'Tab') { event.preventDefault(); toggleEditMode(); } else if (editMode && event.key.toLowerCase() === 'e') faceOperation('extrude'); else if (editMode && event.key.toLowerCase() === 'i') faceOperation('inset'); else if (event.key.toLowerCase() === 'f') focus(); else if (['g', 'r', 's'].includes(event.key.toLowerCase())) { const mode = ({ g: 'translate', r: 'rotate', s: 'scale' })[event.key.toLowerCase()]; document.querySelector(`[data-mode="${mode}"]`).click(); } });
 const resizeObserver = new ResizeObserver(() => { const w = viewport.clientWidth, h = viewport.clientHeight; if (!w || !h) return; camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h, false); }); resizeObserver.observe(viewport);
 makeObject('Box', { name: 'Starter Cube', position: [0, 0.9, 0], color: '#819fca' });
