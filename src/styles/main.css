@@ -721,3 +721,11 @@ button { cursor: pointer; }
 .object-row.selected { background: #45392d !important; border-color: #9e7149 !important; }
 input:focus { border-color: #b98552 !important; }
 @media (min-width: 1200px) { .sidebar { width: 355px; min-width: 355px; } }
+
+
+/* v0.6 mesh-detail affordances */
+.rail .tool[data-action="subdivide"] { border: 1px solid #46536a; background: #242e3c; }
+.rail .tool[data-action="subdivide"]:hover { background: #3a4a62; border-color: #8da9ce; }
+.edit-tip { max-width: 340px; padding: 12px 15px; }
+.edit-tip span { font-size: 11px; line-height: 1.5; }
+@media (max-height: 740px) { .edit-tip { top: 58px; } }
