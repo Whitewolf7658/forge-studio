@@ -729,3 +729,29 @@ input:focus { border-color: #b98552 !important; }
 .edit-tip { max-width: 340px; padding: 12px 15px; }
 .edit-tip span { font-size: 11px; line-height: 1.5; }
 @media (max-height: 740px) { .edit-tip { top: 58px; } }
+
+
+/* v0.7 graphite professional modelling workspace */
+.studio { --surface-0:#17191d; --surface-1:#202329; --surface-2:#292d35; --line:#3a404b; --text:#d9dce2; }
+.topbar { background:#202329 !important; border-bottom:1px solid #40454f !important; box-shadow:0 1px 0 #0b0d10; }
+.brand strong { letter-spacing:1.4px; }
+.brand-mark { border-radius:9px !important; }
+.top-actions button:not(.primary) { color:#c2c7d0; border-radius:5px; }
+.top-actions button:not(.primary):hover { background:#373d47; color:#fff; }
+.top-actions .primary { background:#bd8250 !important; color:#151515 !important; border:1px solid #d6a06b !important; font-weight:700; }
+.top-actions .primary:hover { background:#e0a56c !important; }
+.sidebar { background:#202329 !important; border-left:1px solid #414651 !important; }
+.rail { background:#202329 !important; border-right:1px solid #414651 !important; }
+.panel-head h2 { color:#e5e8ed; }
+.eyebrow { color:#8e98a7; }
+.rail .tool { border-radius:7px !important; transition:background .12s,border-color .12s; }
+.viewport-header { background:#202329 !important; }
+.viewport-bottom { color:#a9b3c1; }
+.statusbar { background:#1d2025 !important; border-top:1px solid #3c434f !important; }
+.menu-popover { background:#282d36 !important; border:1px solid #515b6b !important; }
+.object-row { border-radius:5px !important; }
+.inspector-panel input,.scene-panel input { background:#171b22; border-color:#434a56; }
+.section-title { color:#a2adbd; border-color:#3b434f; }
+#viewport { background:#17191e; }
+.edit-tip { border-radius:7px; max-width:305px; }
+.edit-tip span { font-size:11px; }
