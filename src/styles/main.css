@@ -681,3 +681,23 @@ button { cursor: pointer; }
 
   .viewport-hint { display: none; }
 }
+
+
+/* Forge Studio v0.4 — application chrome and editing affordances */
+.studio { position: relative; }
+.main-menus { display: flex; align-items: center; gap: 2px; margin-left: 22px; }
+.main-menus button { background: transparent; border: 0; color: #aab8cf; padding: 10px 11px; border-radius: 7px; font-size: 12px; cursor: pointer; }
+.main-menus button:hover { background: #27344a; color: #fff; }
+.menu-popover { position: absolute; z-index: 100; top: 60px; left: 200px; width: 225px; padding: 7px; border: 1px solid #455674; border-radius: 10px; background: #202b3b; box-shadow: 0 20px 60px #000a; display: flex; flex-direction: column; gap: 2px; }
+.menu-popover button { display: block; width: 100%; text-align: left; padding: 11px 12px; background: transparent; border: 0; border-radius: 6px; color: #dbe4f3; font-size: 12px; cursor: pointer; }
+.menu-popover button:hover { background: #344765; color: #fff; }
+.view-chips button.chip { cursor: pointer; color: #a9b9d4; font-size: 11px; background: #202b3b; border: 1px solid #39465c; padding: 7px 10px; border-radius: 6px; }
+.view-chips button.chip:hover { background: #354761; color: #fff; }
+.edit-tip { position: absolute; z-index: 5; left: 24px; top: 75px; max-width: 355px; display: flex; flex-direction: column; gap: 8px; padding: 15px 17px; background: #18253be8; border: 1px solid #5e83d2; border-radius: 9px; box-shadow: 0 12px 30px #0006; pointer-events: none; }
+.edit-tip strong { font-size: 11px; letter-spacing: 1.5px; color: #8fb5ff; }
+.edit-tip span { font-size: 12px; line-height: 1.65; color: #c8d6ed; }
+.rail .tool[data-action="edit-mode"].active { background: #2c456f; color: #a8c6ff; border-color: #729cff; }
+.viewport-shell { position: relative; }
+#viewport canvas { touch-action: none; }
+@media (max-width: 1100px) { .main-menus { margin-left: 6px; } .main-menus button { padding: 8px 5px; } }
+@media (max-width: 780px) { .main-menus { display: none; } .edit-tip { max-width: 260px; } }
