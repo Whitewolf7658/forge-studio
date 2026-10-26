@@ -149,45 +149,59 @@ export function initSpectraCore({getProject,getSelection,applyProject,notify}) {
     if(running)return;
     const question=prompt.value.trim();
     if(!question){prompt.focus();return;}
-    if(!online){message('error','Open the locally hosted Spectra Studio on your Windows PC. The public website cannot run your private model.');return;}
+    const mode=$('core-engine').value;
+    if(mode==='local'&&!online){message('error','The Windows AI companion is not connected. Switch to Browser Creator to work here on your school laptop.');return;}
+    if(mode==='webgpu'&&!webModelReady()){message('error','Load the optional on-device model, or choose Browser Creator which works immediately.');return;}
     if(draft){message('error','Apply or discard the current draft before another request.');return;}
-    if(attached&&(attached.mime.startsWith('image/')||attached.mime.startsWith('video/'))&&!$('core-vision').value){
-      message('error','Install a vision model (for example qwen2.5vl:3b) to analyze images and video frames.');return;
+    if(mode==='local'&&attached&&(attached.mime.startsWith('image/')||attached.mime.startsWith('video/'))&&!$('core-vision').value){
+      message('error','Install a vision model on the Windows companion to interpret images/video.');return;
     }
     running=true;send.disabled=true;send.textContent='Working…';
     baseline=JSON.stringify(getProject());
-    const display=question+(attached?' [Reference: '+attached.name+']':'');
-    message('user',display);prompt.value='';
-    const request={prompt:question,project:getProject(),model:$('core-model').value,
-      visionModel:$('core-vision').value,allowWeb:$('core-web').checked,history:history.slice(-8),preferences:$('core-preferences').value.slice(0,900)};
-    if(attached)request.media=attached;
-    const progress=message('assistant','The local model is planning and calling allowed tools…');
+    message('user',question+(attached?' [Reference: '+attached.name+']':''));
+    prompt.value='';
+    const preferences=$('core-preferences').value.slice(0,900);
+    const progress=message('assistant',mode==='browser'?'Composing editable layers in this browser…':mode==='webgpu'?'Running the on-device language model…':'Planning with the local model and tools…');
     try{
-      const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)});
-      if(!response.headers.get('content-type')?.includes('application/json'))throw Error('Unexpected server response');
-      const answer=await response.json();
-      if(!response.ok||answer.error)throw Error(answer.error||'Unknown local model error');
+      let answer;
+      if(mode==='browser'||mode==='webgpu'){
+        const ref=attached?.file?await inspectBrowserReference(attached.file):null;
+        if(mode==='browser'){
+          answer=planFromPrompt({prompt:question,project:getProject(),selection:getSelection?.()||null,reference:ref,preferences});
+        }else{
+          answer=await planWithWebModel({prompt:question,project:getProject(),reference:ref,preferences});
+        }
+        if(ref){answer.reference=ref;}
+      }else{
+        const request={prompt:question,project:getProject(),model:$('core-model').value,
+          visionModel:$('core-vision').value,allowWeb:$('core-web').checked,history:history.slice(-8),preferences};
+        if(attached)request.media={name:attached.name,mime:attached.mime,data:attached.data};
+        const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)});
+        if(!response.headers.get('content-type')?.includes('application/json'))throw Error('Unexpected local server response');
+        answer=await response.json();
+        if(!response.ok||answer.error)throw Error(answer.error||'Local agent request failed');
+      }
       progress.querySelector('.core-message-body').textContent=answer.reply||'Finished.';
       evidence(answer);renderDraft(answer);
       history.push({role:'user',content:question},{role:'assistant',content:answer.reply||''});
       history=history.slice(-10);
       try{localStorage.setItem('spectra.core.history.v1',JSON.stringify(history));}catch{}
-      if(answer.reference?.type==='audio')message('assistant','Audio analysis includes duration, volume and timing, but not semantic sound identification.');
+      if(answer.reference?.note)message('assistant','Reference measurement: '+answer.reference.note);
       if(!answer.changes?.length)notify('Spectra Core finished without changing the project');
     }catch(err){
       progress.classList.add('error');progress.querySelector('.core-message-body').textContent='Request failed: '+err.message;
-    }finally{running=false;send.disabled=false;send.textContent='Run agent ↗';chat.scrollTop=chat.scrollHeight;}
+    }finally{running=false;send.disabled=false;send.textContent='Run creator ↗';chat.scrollTop=chat.scrollHeight;}
   }
   send.onclick=run;
   prompt.addEventListener('keydown',event=>{
     if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();run();}
   });
-  $('core-refresh').onclick=checkConnection;
+  $('core-refresh').onclick=()=>updateEngine();
   $('core-close').onclick=()=>{dock.classList.add('hidden');toggle.classList.remove('active');};
   toggle.onclick=()=>{
     const open=dock.classList.toggle('hidden')===false;
     toggle.classList.toggle('active',open);
-    if(open){checkConnection();prompt.focus();}
+    if(open){updateEngine();prompt.focus();}
   };
   $('core-save-preferences').onclick=()=>{
     try{localStorage.setItem('spectra.core.preferences.v1',$('core-preferences').value.slice(0,900));
@@ -224,7 +238,7 @@ export function initSpectraCore({getProject,getSelection,applyProject,notify}) {
         mime=({mov:'video/quicktime',m4a:'audio/mp4',wav:'audio/wav',
           mp3:'audio/mpeg',ogg:'audio/ogg'})[ext]||'';
       }
-      attached={name:file.name.slice(0,100),mime,data:value.slice(comma+1)};
+      attached={name:file.name.slice(0,100),mime,data:value.slice(comma+1),file};
       $('core-reference-name').textContent=file.name+' · '+(file.size/1048576).toFixed(1)+' MB';
       $('core-reference').classList.remove('hidden');
     };
@@ -232,5 +246,5 @@ export function initSpectraCore({getProject,getSelection,applyProject,notify}) {
     reader.readAsDataURL(file);
   };
   $('core-remove-ref').onclick=()=>{attached=null;$('core-file').value='';$('core-reference').classList.add('hidden');};
-  return {open:()=>{dock.classList.remove('hidden');toggle.classList.add('active');checkConnection();},refresh:checkConnection};
+  return {open:()=>{dock.classList.remove('hidden');toggle.classList.add('active');updateEngine();},refresh:updateEngine};
 }
