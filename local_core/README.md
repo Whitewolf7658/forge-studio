@@ -4,6 +4,16 @@ Spectra Core is a locally hosted AI assistant built for your Roblox VFX and soun
 
 **No cloud model fees, accounts or subscriptions required.** Local generation speed and quality depend on your hardware and installed model. The foundation models are open weights, not trained by Spectra.
 
+## Easiest setup: packaged Windows app (no Python or Node installation)
+
+Open the GitHub Actions workflow [Spectra Core portable Windows app](https://github.com/Whitewolf7658/forge-studio/actions/workflows/windows.yml), select the latest **successful** run, and download the **Spectra-Core-Windows** artifact at the bottom of that run. Extract it and double-click **Spectra-Core.exe**.
+
+This file includes the built Spectra editor and the private AI companion server. It opens your default web browser to http://127.0.0.1:8765. Close its console window to stop the assistant.
+
+The only required external installation for the packaged version is **Ollama for Windows** at https://ollama.com/download/windows, plus at least one model (run ollama pull qwen3:4b in a terminal). For image understanding, optionally run ollama pull qwen2.5vl:3b. FFmpeg is optional for audio/video files. The portable executable includes Python itself and does not require npm.
+
+The workflow artifact expires after 30 days; rebuild or download a newer one at any time. It is not a signed commercial installer. Windows may show an unsigned app warning. Only run executables you have verified came from your own GitHub repository.
+
 ## Quick setup — Windows 11
 
 Install these free programs once:
