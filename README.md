@@ -2,9 +2,26 @@
 
 Spectra Studio is a browser-based particle-effects and audio-design workstation created for building Roblox game assets. It replaces the former Forge Studio modelling interface; the existing GitHub repository and Render Static Site can be reused.
 
-## Spectra Core — private local AI
+## School MacBook — use Spectra directly in your browser
 
-Spectra Studio now includes the **Spectra Core** assistant dock. It is intended for your own Windows PC and uses free Ollama models locally, rather than charging per prompt.
+**No installation, terminal, Ollama, Windows application or API key is required** for the **Browser Creator**.
+
+1. Open the public Render URL, choose **Spectra Core** in the header.
+2. Leave **Engine → Browser Creator · ready** selected (default).
+3. Describe a concrete effect, such as “thick smoke and blue electrical sparks with generator hum”.
+4. Review the individual **draft particle and synthesizer layers**, select **Apply to project**, edit them and export to Roblox.
+
+The browser creator is a procedural prompt interpreter, **not a general-purpose neural AI model**. It supports many typical VFX/SFX concepts, adjustable colours, density, speed, timing and selected-layer edits. It does not search the web, interpret arbitrary videos semantically, or generate realistic recorded sound waves.
+
+To inspect a locally uploaded PNG/JPEG/WEBP it can measure dominant colours. For audio it can measure duration and rough loudness. For browser-compatible videos it samples several frames for colour; exact support depends on the managed browser.
+
+**Optional on-device language model:** choose **Small in-browser AI · WebGPU** and explicitly press **Load AI model**. This fetches a quantized open-weight language model from its model host (hundreds of MB), and only works when WebGPU, school network access, browser memory and storage policies permit it. It is not automatically downloaded, and smaller models are often substantially less capable than hosted assistants. If it fails, switch straight back to Browser Creator. No paid account is needed.
+
+For stronger optional language understanding with web research and separate vision models, use the existing **Windows AI companion** on your home computer. It is not required for editing or creating effects on a school laptop.
+
+## Spectra Core — optional private Windows AI
+
+Spectra Studio includes the **Spectra Core** assistant dock. Browser Creator works on restricted school devices; the optional private companion runs on your own Windows PC and uses free Ollama models locally, rather than charging per prompt.
 
 - Inspect your current project, propose editable emitter and synth-sound layers, revise existing layers and arrange timeline properties.
 - Research public webpages (explicit opt-in), show sources, and analyze image or video references with an optional local vision model.
