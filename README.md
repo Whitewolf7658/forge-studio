@@ -2,6 +2,20 @@
 
 Spectra Studio is a browser-based particle-effects and audio-design workstation created for building Roblox game assets. It replaces the former Forge Studio modelling interface; the existing GitHub repository and Render Static Site can be reused.
 
+## Spectra Core — private local AI
+
+Spectra Studio now includes the **Spectra Core** assistant dock. It is intended for your own Windows PC and uses free Ollama models locally, rather than charging per prompt.
+
+- Inspect your current project, propose editable emitter and synth-sound layers, revise existing layers and arrange timeline properties.
+- Research public webpages (explicit opt-in), show sources, and analyze image or video references with an optional local vision model.
+- Analyze audio/video soundtrack loudness and timing when FFmpeg is available.
+- Review proposed changes in an Apply / Discard panel. Spectra does not modify the project without your approval.
+- Every applied AI change is added to the editor's undo history.
+
+**To use AI you must run the private companion locally.** The Render static site shows the assistant dock and setup information but **cannot run the local model on its own**. See the [Windows setup and limitations](local_core/README.md). The recommended free setup is Ollama with qwen3:4b, plus qwen2.5vl:3b for images. You'll also need Node.js and Python for the launcher. More capable models may require more RAM/VRAM.
+
+The assistant does not train a new foundation model, does not yet semantically understand recorded audio, and does not generate photorealistic neural audio waveforms. These would require additional dedicated models. It can create editable procedural Sound Studio layers now.
+
 ## Included workspaces
 
 ### Particle Lab
