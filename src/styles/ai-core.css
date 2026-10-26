@@ -76,3 +76,13 @@
 .core-draft-actions{display:flex;gap:7px}
 .core-draft-actions button{flex:1;border:1px solid #647789;color:#d8e5ef;border-radius:5px;padding:8px;background:#34485a;font-size:10px}
 @media(max-width:760px){.core-trigger small{display:none}.core-trigger{padding:8px!important}.core-dock{top:52px;bottom:26px;width:min(100vw,450px)}}
+
+.core-memory{flex:none;background:#1f2a37;border-bottom:1px solid #3e536a;padding:9px 15px}
+.core-memory summary{color:#a7c2d9;cursor:pointer;font-size:10px;letter-spacing:.25px;font-weight:600}
+.core-memory textarea{display:block;margin:10px 0 8px;background:#121c28;color:#d9e9f6;
+ border:1px solid #506680;border-radius:5px;padding:9px;width:100%;
+ font:11px/1.5 'Segoe UI',sans-serif;resize:vertical;min-height:51px;max-height:110px}
+.core-memory-actions{display:flex;gap:7px}
+.core-memory-actions button{flex:1;border:1px solid #53667c;border-radius:4px;
+ background:#2b3b4e;color:#c5dff5;padding:7px;font-size:10px}
+.core-memory-actions button:hover{background:#405572}
