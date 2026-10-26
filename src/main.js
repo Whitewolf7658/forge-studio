@@ -189,7 +189,11 @@ initSpectraCore({
    const validated=validateProject(draft);
    stop();preview.reset();project=validated;
    const created=[...changes].reverse().find(change=>change.type==='add');
-   if(created){selection={kind:created.kind,id:created.id};workspace=created.kind==='sound'?'audio':'vfx';}
+   if(created){
+     selection={kind:created.kind,id:created.id};
+     const addedKinds=new Set(changes.filter(change=>change.type==='add').map(change=>change.kind));
+     workspace=addedKinds.size>1?'composer':created.kind==='sound'?'audio':'vfx';
+   }
    else if(!getSelected()){selection={kind:'emitter',id:project.emitters[0]?.id||null};}
    snap('Apply Spectra Core changes');
    renderAll();
