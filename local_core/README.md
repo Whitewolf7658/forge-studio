@@ -1,3 +1,5 @@
+> **School MacBook:** You do not need this Windows setup. Open the Render site and use **Spectra Core → Browser Creator**. See [browser setup](../README.md#school-macbook--use-spectra-directly-in-your-browser).
+
 # Spectra Core — your private local AI for Spectra Studio
 
 Spectra Core is a locally hosted AI assistant built for your Roblox VFX and sound workflow. It connects to Ollama models running on your **own Windows PC**. The assistant has actual project-editing tools, optional public-web search, and image/video/audio reference analysis. You must **approve its project changes** before they affect the editor.
