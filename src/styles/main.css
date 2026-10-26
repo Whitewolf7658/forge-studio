@@ -11,3 +11,108 @@
 .rangeinput{display:flex;align-items:center;gap:8px}.rangeinput input[type=range]{flex:1;min-width:0}.rangeinput input[type=number]{width:71px;flex-shrink:0;text-align:right;padding:6px!important;font-size:10px!important}.inspect-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.inspect-actions .inspector-button{margin:0;display:flex;align-items:center;justify-content:center;gap:5px;font-size:10px}.field .field-top{margin-bottom:8px}.field input[type=range]{height:14px}.statusbar .dot{vertical-align:middle}
 
 .layer .mute{background:transparent;border:0;display:flex;align-items:center;justify-content:center;width:25px;height:25px;flex-shrink:0;color:#8e9fb4}.layer .mute:hover{background:#ffffff1a;color:white}.layer .mute.off{color:#d58b99}
+
+/* Spectra Creator Workspace — desktop workstation chrome */
+:root{
+  --bg:#14171b;
+  --panel:#1d2229;
+  --panel2:#222831;
+  --panel3:#2b323c;
+  --edge:#39424c;
+  --muted:#9da9b7;
+  --muted2:#7e8b9b;
+  --text:#e6ebf2;
+  --accent:#7db5ec;
+  --mint:#69c6b7;
+}
+.app{background:var(--bg)}
+.topbar{
+  height:52px;
+  gap:12px;
+  padding:0 14px;
+  background:#20252d;
+  border-bottom:1px solid #454b54;
+  box-shadow:0 1px 0 #0d1014;
+}
+.identity{min-width:180px;gap:10px}
+.brandmark{
+  width:31px;height:31px;
+  border-radius:6px;
+  background:#82b3e4;
+  box-shadow:none;
+}
+.identity h1{font-size:14px;letter-spacing:1.35px}
+.identity small{font-size:8px;letter-spacing:1.5px;margin-top:4px}
+.top-menu{gap:0}
+.top-menu button{padding:8px 11px;border-radius:4px;color:#bcc6d3}
+.top-menu button:hover,.top-menu button.active{background:#394452;color:#f8fbff}
+.head-actions button{background:#2b333e;border-color:#47525f;border-radius:5px}
+.head-actions button.primary{color:#102235;background:#86bbec;border-color:#86bbec}
+.head-actions button.primary:hover{background:#b3d8f8}
+.project-name span{color:#9da9b8}
+.workspacebar{height:40px;background:#1b2027;border-color:#3e4752}
+.workspace-btn{border-radius:4px;padding:8px 12px}
+.workspace-btn.active{color:#daeeff;background:#2b3948;border-color:#4c6881}
+.left{background:#20252c;border-color:#414a54}
+.left-section{padding:13px 13px 10px}
+.left-top{border-color:#414953}
+.presets-area{border-color:#414953}
+.preset-card{border-color:#46515e;background:#252c35;border-radius:5px}
+.preset-card:hover{border-color:#83b7e7;background:#303b48}
+.right{background:#20252c;border-color:#414a54}
+.inspector-header{border-color:#414a54}
+.group{border-color:#404954}
+.stage-toolbar{background:#252b34;border-color:#444c58}
+.statusbar{background:#191e24;border-color:#444c58}
+.timeline{border-color:#414b58}
+.small-icon{border-radius:4px}
+.dropdown{background:#292f38;border-color:#4f5e70}
+.creation-panel{
+  flex:none;
+  padding:13px 12px 14px;
+  background:#20262e;
+  border-bottom:1px solid #47525e;
+}
+.create-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.create-header .eyebrow{color:#a5bbce;margin:0;font-size:9px}
+.create-detail{font-size:8px;letter-spacing:.7px;color:#718fa9;font-weight:600}
+.creation-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.create-tile{
+  min-height:83px;
+  padding:10px;
+  display:flex;
+  align-items:flex-start;
+  flex-direction:column;
+  gap:8px;
+  position:relative;
+  background:#2b3440;
+  border:1px solid #566475;
+  border-radius:6px;
+  color:#e3effb;
+  text-align:left;
+}
+.create-tile:hover,.create-tile:focus-visible{
+  background:#34465a;
+  border-color:#8ac4f3;
+}
+.create-tile-icon{
+  color:#91c6f3;
+  background:#1f303f;
+  border:1px solid #3c5a73;
+  border-radius:5px;
+  display:grid;
+  place-items:center;
+  height:27px;width:27px;
+}
+.create-tile strong{display:block;font-weight:700;font-size:11px;margin-bottom:4px}
+.create-tile small{display:block;color:#9eb6ce;font-size:9px;line-height:1.4}
+.create-plus{position:absolute;right:10px;top:9px;color:#8bb7d9;font-size:17px}
+@media(max-width:1100px){
+  .create-header{flex-direction:column;align-items:flex-start;gap:5px}
+  .creation-grid{grid-template-columns:1fr}
+  .create-tile{min-height:60px;flex-direction:row;align-items:center}
+}
+@media(max-height:680px){
+  .creation-panel{padding:8px}
+  .create-tile{min-height:55px}
+}
