@@ -1,7 +1,7 @@
 name: Spectra Studio checks
 on:
   push:
-    branches: [main, spectra-studio-rewrite, spectra-creator-workspace]
+    branches: [main, spectra-studio-rewrite, spectra-creator-workspace, spectra-core-local-ai]
   pull_request:
 jobs:
   test-and-build:
@@ -11,6 +11,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m unittest discover -s local_core/tests -v
       - run: npm install
       - run: npm test
       - run: npm run build
