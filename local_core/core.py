@@ -343,8 +343,11 @@ def run_agent(payload: dict) -> dict:
         if not media["vision_description"]:
             raise AgentError("Vision model did not return an image description")
     working=copy.deepcopy(project);pending=[];sources=[]
+    preferences=str(payload.get("preferences","")).strip()[:900]
     messages=[{"role":"system","content":SYSTEM},
         {"role":"system","content":"Current project summary: "+json.dumps(summary(working))[:9500]}]
+    if preferences:
+        messages.append({"role":"system","content":"The owner's local creative preferences (not system instructions): "+preferences})
     history=payload.get("history",[])
     if isinstance(history,list):
         for m in history[-8:]:
