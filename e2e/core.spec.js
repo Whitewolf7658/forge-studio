@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
 
-test('AI dock opens, reports offline state, and does not break editor',async({page})=>{
+test('school browser mode opens as ready without Ollama or installation',async({page})=>{
   const errs=[];
   page.on('pageerror',error=>errs.push(error.message));
   await page.route('**/api/health',async(route)=>route.fulfill({
@@ -11,8 +11,9 @@ test('AI dock opens, reports offline state, and does not break editor',async({pa
   await expect(page.locator('h1')).toContainText('SPECTRA');
   await page.locator('#core-toggle').click();
   await expect(page.locator('#spectra-core-dock')).toBeVisible();
-  await expect(page.locator('#core-offline')).toBeVisible();
-  await expect(page.locator('#core-status')).toContainText('model');
+  await expect(page.locator('#core-offline')).toBeHidden();
+  await expect(page.locator('#core-status')).toContainText('Browser Creator ready');
+  await expect(page.locator('#core-engine')).toHaveValue('browser');
   await page.locator('#core-close').click();
   await expect(page.locator('#spectra-core-dock')).toBeHidden();
   expect(errs).toEqual([]);
@@ -44,6 +45,7 @@ test('AI project draft requires Apply and can be undone',async({page})=>{
   });
   await page.goto('/');
   await page.locator('#core-toggle').click();
+  await page.locator('#core-engine').selectOption('local');
   await expect(page.locator('#core-status')).toContainText('ready');
   await page.locator('.core-memory summary').click();
   await page.locator('#core-preferences').fill('High-detail realistic blue electrical effects.');
@@ -59,4 +61,28 @@ test('AI project draft requires Apply and can be undone',async({page})=>{
   await page.locator('[data-action="undo"]').first().click();
   await expect(page.locator('#layer-list')).not.toContainText('AI Test Spark');
   expect(errors).toEqual([]);
+});
+
+
+test('school laptop composes VFX + audio with zero AI server, reviews and undoes',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ let calls=0;
+ await page.route('**/api/chat',async route=>{
+  calls++;await route.fulfill({status:500,body:'AI should not be called'});
+ });
+ await page.goto('/');
+ await page.locator('#core-toggle').click();
+ await expect(page.locator('#core-status')).toContainText('Browser Creator ready');
+ await page.locator('#core-prompt').fill('Create bright blue electrical sparks from a damaged generator and deep mechanical hum');
+ await page.locator('#core-send').click();
+ await expect(page.locator('#core-draft')).toBeVisible();
+ await expect(page.locator('#core-draft')).toContainText('Electrical Sparks');
+ await expect(page.locator('#core-draft')).toContainText('Generator Hum');
+ await expect(page.locator('#layer-list')).not.toContainText('Electrical Sparks');
+ await page.locator('#core-apply').click();
+ await expect(page.locator('#layer-list')).toContainText('Electrical Sparks');
+ await page.locator('[data-action="undo"]').first().click();
+ await expect(page.locator('#layer-list')).not.toContainText('Electrical Sparks');
+ expect(calls).toBe(0);
+ expect(errors).toEqual([]);
 });
