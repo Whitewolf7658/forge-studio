@@ -184,6 +184,7 @@ function frame(now){let dt=clamp((now-rafLast)/1000,0,.07);rafLast=now;
 }
 initSpectraCore({
  getProject:()=>structuredClone(project),
+ getSelection:()=>({...selection}),
  applyProject:(draft,changes)=>{
    const validated=validateProject(draft);
    stop();preview.reset();project=validated;
