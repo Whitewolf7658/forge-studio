@@ -1,7 +1,7 @@
 name: Spectra Studio checks
 on:
   push:
-    branches: [main, spectra-studio-rewrite]
+    branches: [main, spectra-studio-rewrite, spectra-creator-workspace]
   pull_request:
 jobs:
   test-and-build:
