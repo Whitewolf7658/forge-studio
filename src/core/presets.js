@@ -39,7 +39,7 @@ export function createBlankEmitter(){
   x:0,y:0,z:0,shape:'point',sprite:'glow',rate:16,burst:0,life:1.5,
   speed:1.5,spread:35,gravity:-.5,drag:.2,turbulence:0,
   sizeStart:.24,sizeEnd:.05,opacityStart:1,opacityEnd:0,
-  colorStart:'#ffffff',colorEnd:'#cbdcf1',blend:'alpha',textureId:''};
+  colorStart:'#ffffff',colorEnd:'#cbdcf1',blend:'normal',textureId:''};
 }
 export function createBlankSound(){
  return {id:uid(),name:'Untitled Sound',enabled:true,solo:false,start:0,duration:1,
