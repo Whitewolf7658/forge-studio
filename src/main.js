@@ -2,7 +2,9 @@ import {effectPresets,soundPresets,createEmitter,createSound,createBlankEmitter,
 import {renderMix,renderSound,soundToWav,playBuffer,importSample,AUDIO_RATE} from './core/audio.js';
 import {exportRobloxLua,downloadFile,fileBase} from './core/exports.js';
 import {VFXPreview,makeSpritePNG} from './core/preview.js';
+import {initSpectraCore} from './core/ai-ui.js';
 import './styles/main.css';
+import './styles/ai-core.css';
 
 const $=id=>document.getElementById(id);
 const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -180,5 +182,19 @@ function frame(now){let dt=clamp((now-rafLast)/1000,0,.07);rafLast=now;
  else{if(++wavFrame%2===0||waveDirty)drawWaveform();}
  requestAnimationFrame(frame);
 }
+initSpectraCore({
+ getProject:()=>structuredClone(project),
+ applyProject:(draft,changes)=>{
+   const validated=validateProject(draft);
+   stop();preview.reset();project=validated;
+   const created=[...changes].reverse().find(change=>change.type==='add');
+   if(created){selection={kind:created.kind,id:created.id};workspace=created.kind==='sound'?'audio':'vfx';}
+   else if(!getSelected()){selection={kind:'emitter',id:project.emitters[0]?.id||null};}
+   snap('Apply Spectra Core changes');
+   renderAll();
+   if(selection.kind==='emitter'&&getSelected())preview.burst(selection.id);
+ },
+ notify
+});
 snap('Initial scene');renderAll();preview.draw();if(project.emitters[0]){preview.burst(project.emitters[0].id,70);if(project.emitters[1])preview.burst(project.emitters[1].id,45);}requestAnimationFrame(frame);
 window.addEventListener('error',e=>{console.error('Spectra runtime error',e.error||e.message);notify('Editor error: '+e.message,true);});
