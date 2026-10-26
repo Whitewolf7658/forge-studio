@@ -10,7 +10,7 @@ from threading import Semaphore
 from urllib.parse import unquote,urlsplit
 from core import AgentError,models,run_agent
 
-ROOT=Path(__file__).resolve().parent.parent
+ROOT=Path(getattr(sys,"_MEIPASS",Path(__file__).resolve().parent.parent))
 DIST=ROOT/"dist"
 PORT=int(os.environ.get("SPECTRA_CORE_PORT","8765"))
 LOCK=Semaphore(1)
@@ -99,6 +99,12 @@ def main():
     server=ThreadingHTTPServer(("127.0.0.1",PORT),Handler)
     print(f"Spectra Studio + private Spectra Core: http://127.0.0.1:{PORT}")
     print("All AI calls run locally through Ollama. Press Ctrl+C to stop.")
+    if getattr(sys,"frozen",False):
+        import threading,time,webbrowser
+        def launch_browser():
+            time.sleep(.6)
+            webbrowser.open(f"http://127.0.0.1:{PORT}")
+        threading.Thread(target=launch_browser,daemon=True).start()
     try:server.serve_forever()
     except KeyboardInterrupt:pass
     finally:server.server_close()
