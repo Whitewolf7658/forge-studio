@@ -51,7 +51,7 @@ export function initSpectraCore({getProject,getSelection,applyProject,notify}) {
   function connection(text,good){
     $('core-status').textContent=text;
     $('core-led').classList.toggle('on',Boolean(good));
-    $('core-offline').classList.toggle('hidden',Boolean(good));
+    $('core-offline').classList.toggle('hidden',$('core-engine').value!=='local'||Boolean(good));
     online=Boolean(good);
   }
   function fillOptions(id,arr,preferred){
@@ -65,7 +65,8 @@ export function initSpectraCore({getProject,getSelection,applyProject,notify}) {
     }else el.value=arr.includes(before)?before:(arr.includes(preferred)?preferred:arr[0]);
   }
   async function checkConnection(){
-    connection('Checking local companion…',false);
+    if($('core-engine').value!=='local')return;
+    connection('Checking Windows companion…',false);
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),5000);
     try{
       const res=await fetch('/api/health',{signal:controller.signal,cache:'no-store'});
@@ -75,11 +76,39 @@ export function initSpectraCore({getProject,getSelection,applyProject,notify}) {
       const names=data.models||[];
       fillOptions('core-model',names,'qwen3:4b');
       fillOptions('core-vision',names.filter(n=>/vl|vision|gemma3|llava/i.test(n)),'qwen2.5vl:3b');
-      connection(names.length?'Private local AI ready':'Companion active · download Ollama model',names.length>0);
-    }catch{
-      connection('Not connected · open local studio',false);
-    }finally{clearTimeout(timer);}
+      connection(names.length?'Windows model ready':'Companion active · download an Ollama model',names.length>0);
+    }catch{connection('Windows companion not connected',false);}
+    finally{clearTimeout(timer);}
   }
+  function updateEngine(){
+    const mode=$('core-engine').value;
+    $('core-config').classList.toggle('hidden',mode!=='local');
+    $('core-web').disabled=mode!=='local';
+    if(mode!=='local')$('core-web').checked=false;
+    $('core-enable-model').classList.toggle('hidden',mode!=='webgpu'||webModelReady());
+    if(mode==='browser'){
+      $('core-engine-note').textContent='Instant browser composer · works on this school MacBook. Procedural interpretation, not a language model.';
+      connection('Browser Creator ready · no installs',true);
+    }else if(mode==='webgpu'){
+      const supported=webGPUAvailable();
+      $('core-enable-model').disabled=!supported;
+      $('core-engine-note').textContent=supported?'Optional small language model: downloads roughly 500 MB after you click Load. Needs memory and school Wi-Fi access.':'WebGPU appears unavailable or blocked. Switch to Browser Creator.';
+      connection(webModelReady()?'On-device language model ready':supported?'Model not loaded · click Load':'WebGPU unavailable',webModelReady());
+    }else{
+      $('core-engine-note').textContent='This mode uses the Windows companion on your home PC. Switch to Browser Creator for school.';
+      checkConnection();
+    }
+  }
+  $('core-engine').onchange=updateEngine;
+  $('core-enable-model').onclick=async()=>{
+    if(!confirm('Download a small open-weight language model (hundreds of MB) to this browser? This may be blocked or slow on a school MacBook.'))return;
+    const button=$('core-enable-model');button.disabled=true;button.textContent='Loading…';
+    try{
+      await loadWebModel(progress=>$('core-engine-note').textContent=progress);
+      message('assistant','On-device model loaded. You can now draft effect layers with language-model assistance.');
+      updateEngine();
+    }catch(error){message('error',error.message+' Browser Creator remains available.');button.disabled=false;button.textContent='Retry download';updateEngine();}
+  };
   function renderDraft(result){
     draft=result?.project&&result.changes?.length?result:null;
     $('core-draft').classList.toggle('hidden',!draft);
