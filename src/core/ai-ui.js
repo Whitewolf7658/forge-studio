@@ -16,6 +16,7 @@ export function initSpectraCore({getProject,applyProject,notify}) {
   '<div class="core-connection"><span id="core-led" class="core-led"></span><span id="core-status">Checking local engine…</span><button id="core-refresh" class="core-icon" title="Refresh connection">↻</button></div>',
   '<div id="core-offline" class="core-offline hidden"><strong>Start the AI on your Windows computer.</strong><p>The public Render site does not run local AI. Install Ollama, pull a model, then launch the included Windows companion and open the local studio.</p><a href="https://github.com/Whitewolf7658/forge-studio/blob/main/local_core/README.md" target="_blank" rel="noopener">Setup instructions ↗</a><code>http://127.0.0.1:8765</code></div>',
   '<div class="core-config"><label>Reasoning model<select id="core-model"><option value="">Connect locally…</option></select></label><label>Vision model<select id="core-vision"><option value="">Install vision model</option></select></label></div>',
+  '<details class="core-memory"><summary>Personalize your AI · local memory</summary><textarea id="core-preferences" rows="2" maxlength="900" placeholder="e.g. realistic Roblox fire, cinematic sounds, no cartoon effects"></textarea><div class="core-memory-actions"><button id="core-save-preferences">Save preferences</button><button id="core-clear-chat">Clear conversation</button></div></details>',
   '<div class="core-conversation" id="core-chat" role="log" aria-live="polite"><div class="core-message assistant"><span class="core-kicker">SPECTRA CORE</span><div class="core-message-body">Ask me to research a real-world reference, build layered particle effects, design synth sounds, or analyze an uploaded image, audio file or video. Any changes I create stay in a draft until you approve them.</div></div></div>',
   '<div class="core-bottom">',
   '<div id="core-draft" class="core-draft hidden"><div class="core-draft-head"><strong>PROPOSED CHANGES</strong><span id="core-draft-count"></span></div><div id="core-draft-details"></div><div class="core-draft-actions"><button id="core-discard">Discard</button><button id="core-apply" class="primary">Apply to project</button></div></div>',
@@ -29,6 +30,12 @@ export function initSpectraCore({getProject,applyProject,notify}) {
   const $=id=>dock.querySelector('#'+id);
   const chat=$('core-chat'),send=$('core-send'),prompt=$('core-prompt');
   let attached=null,draft=null,history=[],online=false,running=false,baseline=null;
+  try{
+    const previous=JSON.parse(localStorage.getItem('spectra.core.history.v1')||'[]');
+    if(Array.isArray(previous))history=previous.filter(x=>['user','assistant'].includes(x.role)&&typeof x.content==='string').slice(-10);
+    $('core-preferences').value=localStorage.getItem('spectra.core.preferences.v1')||'';
+  }catch{/* Private mode may disable local storage */}
+
   function message(kind,text){
     const el=document.createElement('div');el.className='core-message '+kind;
     const kicker=document.createElement('span');kicker.className='core-kicker';
@@ -119,7 +126,7 @@ export function initSpectraCore({getProject,applyProject,notify}) {
     const display=question+(attached?' [Reference: '+attached.name+']':'');
     message('user',display);prompt.value='';
     const request={prompt:question,project:getProject(),model:$('core-model').value,
-      visionModel:$('core-vision').value,allowWeb:$('core-web').checked,history:history.slice(-8)};
+      visionModel:$('core-vision').value,allowWeb:$('core-web').checked,history:history.slice(-8),preferences:$('core-preferences').value.slice(0,900)};
     if(attached)request.media=attached;
     const progress=message('assistant','The local model is planning and calling allowed tools…');
     try{
@@ -131,6 +138,7 @@ export function initSpectraCore({getProject,applyProject,notify}) {
       evidence(answer);renderDraft(answer);
       history.push({role:'user',content:question},{role:'assistant',content:answer.reply||''});
       history=history.slice(-10);
+      try{localStorage.setItem('spectra.core.history.v1',JSON.stringify(history));}catch{}
       if(answer.reference?.type==='audio')message('assistant','Audio analysis includes duration, volume and timing, but not semantic sound identification.');
       if(!answer.changes?.length)notify('Spectra Core finished without changing the project');
     }catch(err){
@@ -147,6 +155,16 @@ export function initSpectraCore({getProject,applyProject,notify}) {
     const open=dock.classList.toggle('hidden')===false;
     toggle.classList.toggle('active',open);
     if(open){checkConnection();prompt.focus();}
+  };
+  $('core-save-preferences').onclick=()=>{
+    try{localStorage.setItem('spectra.core.preferences.v1',$('core-preferences').value.slice(0,900));
+      message('assistant','Your private creation preferences are saved on this computer.');}
+    catch{message('error','This browser is not allowing local storage.');}
+  };
+  $('core-clear-chat').onclick=()=>{
+    if(!confirm('Clear this assistant conversation from the current browser?'))return;
+    history=[];try{localStorage.removeItem('spectra.core.history.v1');}catch{}
+    chat.replaceChildren();message('assistant','Conversation cleared. Project layers are unchanged.');
   };
   $('core-discard').onclick=()=>{renderDraft(null);message('assistant','Discarded. Your project was not changed.');};
   $('core-apply').onclick=()=>{
