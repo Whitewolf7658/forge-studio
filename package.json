@@ -1,18 +1,13 @@
-
 {
-  "name": "forge-studio",
+  "name": "spectra-studio",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test"
   },
-  "dependencies": {
-    "three": "^0.180.0"
-  },
-  "devDependencies": {
-    "vite": "^7.1.0"
-  }
+  "devDependencies": {"vite": "^7.1.0"}
 }
