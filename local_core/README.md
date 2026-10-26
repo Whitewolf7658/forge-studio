@@ -40,6 +40,8 @@ Keep the launcher window open while using Spectra Core. The URL is private to yo
 
 ## Capabilities
 
+**Private creative memory:** Save your preferred effect style and sound direction in the assistant's Personalize panel. Recent text exchanges and those preferences stay in browser-local storage on your computer; you can clear the chat history inside the panel. The model receives this context during future prompts. Media files are not saved as assistant memories.
+
 **Creation and modification:** inspect active project, add particle emitters, add procedural sound layers, edit/remove specific layers, and set timeline duration/BPM. Multi-layer prompts can propose several changes. **Changes remain drafts until you click Apply.** The edit becomes a single undo step.
 
 **Web research:** disabled by default. Opt in with **Web access** before searching or reading public HTTPS webpages. Web search uses a public RSS search source (subject to availability); content extraction reads publicly accessible text. No logins or private-account scraping.
