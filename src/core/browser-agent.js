@@ -56,7 +56,7 @@ function effectKeys(t){
  if(match(t,/magic|spell|fairy|aura/i))keys.push('magic');
  if(match(t,/confetti|celebrat|streamer/i))keys.push('confetti');
  if(match(t,/wind|gust|breeze/i)&&!keys.length)keys.push('dust');
- if(match(t,/no\\s+smoke|without\\s+smoke/i))return uniq(keys).filter(k=>k!=='smoke');
+ if(match(t,/no\s+smoke|without\s+smoke/i))return uniq(keys).filter(k=>k!=='smoke');
  return uniq(keys);
 }
 function soundKeys(t){
@@ -64,22 +64,22 @@ function soundKeys(t){
  if(match(t,/electri|spark|crackl|static|voltage|lightning/i))keys.push('crackle');
  if(match(t,/generator|engine|machine|machinery|motor|industrial|mechanical/i))keys.push('hum');
  if(match(t,/explos|boom|blast|detonat|impact|hit|collision|slam|thud/i))keys.push('impact','rumble');
- if(match(t,/thunder|rumbl|deep\\s+bass/i))keys.push('rumble');
+ if(match(t,/thunder|rumbl|deep\s+bass/i))keys.push('rumble');
  if(match(t,/wind|gust|breeze|storm/i))keys.push('wind');
  if(match(t,/whoosh|swoosh|swing|sweep|swish/i))keys.push('whoosh');
  if(match(t,/laser|gunshot|zap|raygun/i))keys.push('laser');
  if(match(t,/bell|chime|shimmer|crystal/i))keys.push('bell');
- if(match(t,/click|button|interface|ui\\s+sound|notification/i))keys.push('click');
- if(match(t,/footstep|walking|running\\s+on/i))keys.push('step');
+ if(match(t,/click|button|interface|ui\s+sound|notification/i))keys.push('click');
+ if(match(t,/footstep|walking|running\s+on/i))keys.push('step');
  if(match(t,/water|splash|liquid|drip/i))keys.push('splash');
- return match(t,/no\\s+sound|without\\s+sound|silent/i)?[]:uniq(keys);
+ return match(t,/no\s+sound|without\s+sound|silent/i)?[]:uniq(keys);
 }
 function mods(t){
- const duration=t.match(/\\b(\\d+(?:\\.\\d+)?)\\s*(?:s|secs?|seconds?)\\b/i);
- const quantity=t.match(/\\b(\\d{1,3})\\s*(?:particles?|sparks?|embers?)\\b/i);
- return {intense:match(t,/\\b(massive|intense|huge|explosive|powerful|strong|thick|dense)\\b/i),
- subtle:match(t,/\\b(subtle|gentle|small|faint|light|weak|soft|thin)\\b/i),
- fast:match(t,/\\b(fast|rapid|quick|sharp)\\b/i),slow:match(t,/\\b(slow|drifting|floating)\\b/i),
+ const duration=t.match(/\b(\d+(?:\.\d+)?)\s*(?:s|secs?|seconds?)\b/i);
+ const quantity=t.match(/\b(\d{1,3})\s*(?:particles?|sparks?|embers?)\b/i);
+ return {intense:match(t,/\b(massive|intense|huge|explosive|powerful|strong|thick|dense)\b/i),
+ subtle:match(t,/\b(subtle|gentle|small|faint|light|weak|soft|thin)\b/i),
+ fast:match(t,/\b(fast|rapid|quick|sharp)\b/i),slow:match(t,/\b(slow|drifting|floating)\b/i),
  duration:duration?cx(+duration[1],.1,30):null,quantity:quantity?cx(+quantity[1],1,350):null};
 }
 function colors(t,reference){
@@ -105,14 +105,14 @@ function sound(key,m,reference){
  return layer;
 }
 function editSelected(layer,t){
- const bigger=/\\b(more|increase|boost|stronger|louder|bigger|denser|thicker|brighter|faster|higher)\\b/i.test(t);
- const smaller=/\\b(less|decrease|reduce|quieter|smaller|slower|softer|thinner|weaker|lower)\\b/i.test(t);
+ const bigger=/\b(more|increase|boost|stronger|louder|bigger|denser|thicker|brighter|faster|higher)\b/i.test(t);
+ const smaller=/\b(less|decrease|reduce|quieter|smaller|slower|softer|thinner|weaker|lower)\b/i.test(t);
  const mul=bigger?1.35:smaller?.7:1,changes={};
  if('rate'in layer){
    if(/density|particles|sparks|thicker/.test(t))changes.rate=Math.round(cx(layer.rate*mul,0,400));
    if(/speed|faster|slower|velocity/.test(t))changes.speed=Number(cx(layer.speed*mul,0,24).toFixed(2));
    if(/size|larger|smaller/.test(t))changes.sizeStart=Number(cx(layer.sizeStart*mul,0,3).toFixed(2));
-   if(/lifetime|last\\s+longer|shorter/.test(t))changes.life=Number(cx(layer.life*mul,.1,12).toFixed(2));
+   if(/lifetime|last\s+longer|shorter/.test(t))changes.life=Number(cx(layer.life*mul,.1,12).toFixed(2));
    const c=colors(t);if(c){changes.colorStart=c[0];changes.colorEnd=c[1];}
  }else{
    if(/loud|quiet|volume|gain/.test(t))changes.volume=Number(cx(layer.volume*mul,0,1.25).toFixed(2));
@@ -126,7 +126,7 @@ export function planFromPrompt({project,prompt,selection=null,reference=null,pre
  if(!text)return {reply:'Enter an effect description first.',project:null,changes:[],steps:[],sources:[],engine:'procedural'};
  const m=mods(text+' '+(/realistic/i.test(preferences)?'realistic':''));
  const steps=[],changes=[];
- const isEdit=/\\b(make (it|the|this)|change|adjust|modify|increase|decrease|reduce|more\\s+(smoke|sparks|particles)|less\\s+(smoke|sparks|particles))\\b/i.test(text);
+ const isEdit=/\b(make (it|the|this)|change|adjust|modify|increase|decrease|reduce|more\s+(smoke|sparks|particles)|less\s+(smoke|sparks|particles))\b/i.test(text);
  const selected=selection&&working[selection.kind==='sound'?'sounds':'emitters']?.find(x=>x.id===selection.id);
  if(isEdit&&selected){
    const updates=editSelected(selected,text);if(Object.keys(updates).length){
@@ -136,8 +136,8 @@ export function planFromPrompt({project,prompt,selection=null,reference=null,pre
    }
  }
  let effects=effectKeys(text),audio=soundKeys(text);
- const audioOnly=/\\b(only|just)\\s+(a\\s+)?(sound|audio|sfx)|sound\\s+only|audio\\s+only/i.test(text);
- const effectOnly=/\\b(only|just)\\s+(a\\s+)?(effect|particles?|vfx)|vfx\\s+only|particles?\\s+only/i.test(text);
+ const audioOnly=/\b(only|just)\s+(a\s+)?(sound|audio|sfx)|sound\s+only|audio\s+only/i.test(text);
+ const effectOnly=/\b(only|just)\s+(a\s+)?(effect|particles?|vfx)|vfx\s+only|particles?\s+only/i.test(text);
  if(audioOnly)effects=[];if(effectOnly)audio=[];
  if(!effects.length&&!audio.length){
    if(/sound|audio|sfx|tone|noise/.test(text))audio=['click'];
