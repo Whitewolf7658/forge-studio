@@ -2,28 +2,32 @@
  * Spectra Core: private, optional AI dock. The agent never modifies project data
  * without an explicit Apply click, and the public site has no secret API key.
  */
-export function initSpectraCore({getProject,applyProject,notify}) {
+import {planFromPrompt,inspectBrowserReference} from './browser-agent.js';
+import {loadWebModel,planWithWebModel,webGPUAvailable,webModelReady} from './browser-llm.js';
+export function initSpectraCore({getProject,getSelection,applyProject,notify}) {
   const header=document.querySelector('.head-actions');
   if(!header)throw Error('Spectra Core requires a header');
   const toggle=document.createElement('button');
   toggle.id='core-toggle';toggle.className='core-trigger';toggle.type='button';
-  toggle.innerHTML='<span class="core-asterisk">✦</span><span>Spectra Core</span><small>LOCAL</small>';
+  toggle.innerHTML='<span class="core-asterisk">✦</span><span>Spectra Core</span><small>BROWSER</small>';
   header.insertBefore(toggle,header.querySelector('[data-action="export-menu"]'));
   const dock=document.createElement('aside');
   dock.id='spectra-core-dock';dock.className='core-dock hidden';dock.setAttribute('aria-label','Private Spectra AI assistant');
   dock.innerHTML=[
   '<header class="core-head"><div class="core-title"><span class="core-monogram">✦</span><div><strong>SPECTRA CORE</strong><small>PRIVATE CREATION AGENT</small></div></div><button id="core-close" class="core-icon" aria-label="Close">×</button></header>',
   '<div class="core-connection"><span id="core-led" class="core-led"></span><span id="core-status">Checking local engine…</span><button id="core-refresh" class="core-icon" title="Refresh connection">↻</button></div>',
-  '<div id="core-offline" class="core-offline hidden"><strong>Start the AI on your Windows computer.</strong><p>The public Render site does not run local AI. Install Ollama, pull a model, then launch the included Windows companion and open the local studio.</p><a href="https://github.com/Whitewolf7658/forge-studio/blob/main/local_core/README.md" target="_blank" rel="noopener">Setup instructions ↗</a><code>http://127.0.0.1:8765</code></div>',
-  '<div class="core-config"><label>Reasoning model<select id="core-model"><option value="">Connect locally…</option></select></label><label>Vision model<select id="core-vision"><option value="">Install vision model</option></select></label></div>',
+  '<div class="core-engine"><label>ENGINE<select id="core-engine"><option value="browser">Browser Creator · ready</option><option value="webgpu">Small in-browser AI · WebGPU</option><option value="local">Windows AI companion · Ollama</option></select></label><button id="core-enable-model" class="hidden">Load AI model</button></div>',
+  '<p id="core-engine-note" class="core-engine-note">Runs now on your school MacBook without an installation. Procedural prompt-to-effect creation, not a full language model.</p>',
+  '<div id="core-offline" class="core-offline hidden"><strong>Windows companion is optional.</strong><p>The browser creator works right here without installs. For a larger language model, use the Windows companion at home.</p><a href="https://github.com/Whitewolf7658/forge-studio/blob/main/local_core/README.md" target="_blank" rel="noopener">Setup instructions ↗</a><code>http://127.0.0.1:8765</code></div>',
+  '<div class="core-config hidden"><label>Reasoning model<select id="core-model"><option value="">Connect locally…</option></select></label><label>Vision model<select id="core-vision"><option value="">Install vision model</option></select></label></div>',
   '<details class="core-memory"><summary>Personalize your AI · local memory</summary><textarea id="core-preferences" rows="2" maxlength="900" placeholder="e.g. realistic Roblox fire, cinematic sounds, no cartoon effects"></textarea><div class="core-memory-actions"><button id="core-save-preferences">Save preferences</button><button id="core-clear-chat">Clear conversation</button></div></details>',
-  '<div class="core-conversation" id="core-chat" role="log" aria-live="polite"><div class="core-message assistant"><span class="core-kicker">SPECTRA CORE</span><div class="core-message-body">Ask me to research a real-world reference, build layered particle effects, design synth sounds, or analyze an uploaded image, audio file or video. Any changes I create stay in a draft until you approve them.</div></div></div>',
+  '<div class="core-conversation" id="core-chat" role="log" aria-live="polite"><div class="core-message assistant"><span class="core-kicker">SPECTRA CORE</span><div class="core-message-body">On your school laptop, Browser Creator builds editable particle and sound layers from descriptions. It can inspect basic image colours and sound levels. This mode is procedural, not a general AI model; the optional WebGPU model and Windows companion provide language-model features.</div></div></div>',
   '<div class="core-bottom">',
   '<div id="core-draft" class="core-draft hidden"><div class="core-draft-head"><strong>PROPOSED CHANGES</strong><span id="core-draft-count"></span></div><div id="core-draft-details"></div><div class="core-draft-actions"><button id="core-discard">Discard</button><button id="core-apply" class="primary">Apply to project</button></div></div>',
   '<div id="core-reference" class="core-reference hidden"><span id="core-reference-name"></span><button id="core-remove-ref" aria-label="Remove reference">×</button></div>',
   '<textarea id="core-prompt" rows="3" maxlength="5500" placeholder="Describe an original effect, sound or research task…" aria-label="Ask Spectra Core"></textarea>',
   '<div class="core-compose-actions"><label for="core-file" class="core-attach">＋ Reference</label><input id="core-file" type="file" hidden accept="image/png,image/jpeg,image/webp,video/mp4,video/webm,video/quicktime,audio/wav,audio/mpeg,audio/ogg,audio/mp4,.mov,.m4a,.mp3,.ogg,.wav,.mp4,.webm"><label class="core-web-label"><input id="core-web" type="checkbox"><span>Web access</span></label><button id="core-send" class="primary">Run agent ↗</button></div>',
-  '<div class="core-footnote">Local models only · Project changes require approval · Ctrl+Enter to send</div>',
+  '<div class="core-footnote">Browser Creator works on school devices · AI model download is optional · Approve edits before applying</div>',
   '</div>'
   ].join('');
   document.querySelector('.app').appendChild(dock);
