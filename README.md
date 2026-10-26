@@ -5,6 +5,7 @@ Spectra Studio is a browser-based particle-effects and audio-design workstation 
 ## Included workspaces
 
 ### Particle Lab
+- **New Effect** creates a completely independent emitter with neutral settings; presets are optional shortcuts, not required.
 - Layered real-time 3D particle preview with orbit/pan/zoom and top/front views.
 - 10 included effects: embers, magic, smoke, impacts, snow, dust, portals, confetti, electricity, and fire.
 - Spawn shape, rate, burst count, lifetime, velocity, spread, gravity, drag, turbulence, position, size, opacity, colour, sprite and blending settings.
@@ -13,6 +14,7 @@ Spectra Studio is a browser-based particle-effects and audio-design workstation 
 - Export a Roblox Luau script that constructs `ParticleEmitter` instances on attachments and schedules bursts and emissions.
 
 ### Sound Studio
+- **New Sound** creates a blank synth layer with a sine oscillator and no added noise or effects; every sound parameter is editable.
 - 10 procedural synth presets, including lasers, whooshes, explosions, UI blips, impacts, bells and ambient wind.
 - Multi-layer stereo sound design with oscillator waveforms, pitch glide, amplitude envelope, low-pass filtering, drive/saturation, pan, noise and delay.
 - Import audio supported by the browser (`wav`, `mp3`, `ogg` etc.) and retain up to the first 12 seconds in a portable project file.
@@ -50,3 +52,6 @@ npm run build
 The build outputs a static `dist/` directory, suitable for Render Static Site. Use `npm install && npm run build` with publish directory `dist`.
 
 The code uses browser Canvas 2D, Web Audio and native ES modules; no third-party runtime dependency is needed. Unit tests cover sound generation, WAV format, project validation and Roblox export. Browser interaction tests were performed with Chromium before deployment.
+## AI generation direction
+
+A future optional AI integration may translate text and image references into editable emitter projects, or generate sounds with a third-party sound-effects model. It is **not implemented or enabled** in the local editor. Online generation requires a separate secure backend, provider credentials, billing safeguards and explicit user consent. Never put provider API keys into this static site's JavaScript.
