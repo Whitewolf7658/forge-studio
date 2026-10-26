@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeProject,createEmitter,createSound,validateProject,effectPresets,soundPresets} from '../src/core/presets.js';
+import {makeProject,createEmitter,createSound,createBlankEmitter,createBlankSound,validateProject,effectPresets,soundPresets} from '../src/core/presets.js';
 import {renderSound,renderMix,soundToWav,importSample} from '../src/core/audio.js';
 import {exportRobloxLua} from '../src/core/exports.js';
 
@@ -32,4 +32,25 @@ test('Roblox Lua export includes actual ParticleEmitter properties, timing and s
  const p=makeProject();p.emitters[0].textureId='12345678';p.emitters[0].burst=12;const lua=exportRobloxLua(p);
  for(const part of ['Instance.new("ParticleEmitter")','ParticleEmitterShape','NumberSequenceKeypoint.new','ColorSequenceKeypoint.new','task.delay','rbxassetid://12345678','Emit(12)'])assert.ok(lua.includes(part),part);
  p.emitters[0].textureId='"\nprint("injected")';assert.ok(!exportRobloxLua(p).includes('print("injected")'));
+});
+test('blank VFX and sound create independently and do not inherit the preset parameters',()=>{
+ const emitter=createBlankEmitter(),other=createBlankEmitter(),sound=createBlankSound();
+ assert.notEqual(emitter.id,other.id);
+ assert.equal(emitter.name,'Untitled Particle');
+ assert.equal(emitter.shape,'point');
+ assert.equal(emitter.turbulence,0);
+ assert.notEqual(emitter.colorStart,createEmitter('embers').colorStart);
+ assert.equal(sound.name,'Untitled Sound');
+ assert.equal(sound.wave,'sine');
+ assert.equal(sound.freq,sound.endFreq);
+ assert.notEqual(sound.kind,createSound('impact').kind);
+ const waveform=renderSound(sound,11025);
+ assert.ok(waveform.left.some(x=>Math.abs(x)>0.0001));
+ const project=makeProject();
+ project.emitters=[emitter];
+ project.sounds=[sound];
+ const roundtrip=validateProject(JSON.parse(JSON.stringify(project)));
+ assert.equal(roundtrip.emitters[0].colorStart,emitter.colorStart);
+ assert.equal(roundtrip.sounds[0].freq,sound.freq);
+ assert.match(exportRobloxLua(project),/ParticleEmitter/);
 });
