@@ -33,6 +33,20 @@ export function createSound(presetId='laser'){
  const preset=soundPresets.find(x=>x.id===presetId)||soundPresets[0];
  return {id:uid(),name:preset.label,enabled:true,solo:false,start:0,duration:.6,kind:'tone',wave:'sine',freq:440,endFreq:220,attack:.01,release:.3,volume:.6,pan:0,noise:0,filter:12000,drive:0,echo:0,reverse:false,assetId:'',sample:null,...structuredClone(preset.data)};
 }
+// Independent creation templates: no preset lookup or preset parameters.
+export function createBlankEmitter(){
+ return {id:uid(),name:'Untitled Particle',enabled:true,solo:false,start:0,duration:8,
+  x:0,y:0,z:0,shape:'point',sprite:'glow',rate:16,burst:0,life:1.5,
+  speed:1.5,spread:35,gravity:-.5,drag:.2,turbulence:0,
+  sizeStart:.24,sizeEnd:.05,opacityStart:1,opacityEnd:0,
+  colorStart:'#ffffff',colorEnd:'#cbdcf1',blend:'alpha',textureId:''};
+}
+export function createBlankSound(){
+ return {id:uid(),name:'Untitled Sound',enabled:true,solo:false,start:0,duration:1,
+  kind:'tone',wave:'sine',freq:440,endFreq:440,
+  attack:.01,release:.2,volume:.5,pan:0,noise:0,filter:12000,
+  drive:0,echo:0,reverse:false,assetId:'',sample:null};
+}
 export function makeProject(){return {format:'spectra-studio',version:1,name:'Untitled Project',duration:8,bpm:120,emitters:[createEmitter('embers'),createEmitter('spell')],sounds:[{...createSound('impact'),start:.5},{...createSound('bell'),start:1.2}],settings:{grid:true,background:'studio',quality:1}};}
 const emitterNumbers={start:[0,30],duration:[.05,30],x:[-25,25],y:[-25,25],z:[-25,25],rate:[0,400],burst:[0,350],life:[.1,12],speed:[0,24],spread:[0,180],gravity:[-20,20],drag:[0,6],turbulence:[0,5],sizeStart:[0,3],sizeEnd:[0,3],opacityStart:[0,1],opacityEnd:[0,1]};
 const soundNumbers={start:[0,30],duration:[.05,30],freq:[20,4000],endFreq:[20,4000],attack:[.001,2],release:[.005,4],volume:[0,1.25],pan:[-1,1],noise:[0,1],filter:[100,18000],drive:[0,1],echo:[0,.7]};
