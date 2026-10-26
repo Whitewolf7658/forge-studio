@@ -33,8 +33,8 @@ NUMERIC = {
 }
 CHOICES = {
     "emitter": {"shape": {"point","sphere","disc","ring","box"},
-                "sprite": {"glow","spark","smoke","circle","star","soft","streak"},
-                "blend": {"add","alpha"}},
+                "sprite": {"glow","spark","smoke","ring","star","square"},
+                "blend": {"add","normal"}},
     "sound": {"kind":{"tone","noise","pluck","bell"}, "wave":{"sine","triangle","saw","square"}},
 }
 COLORS={"colorStart","colorEnd"}
@@ -46,7 +46,7 @@ SFX_DEFAULT = dict(enabled=True,solo=False,start=0,duration=1,kind="tone",wave="
 VFX_DEFAULT = dict(enabled=True,solo=False,start=0,duration=8,x=0,y=0,z=0,shape="point",
                    sprite="glow",rate=16,burst=0,life=1.5,speed=1.5,spread=35,gravity=-.5,
                    drag=.2,turbulence=0,sizeStart=.24,sizeEnd=.05,opacityStart=1,opacityEnd=0,
-                   colorStart="#ffffff",colorEnd="#cbdcf1",blend="alpha",textureId="")
+                   colorStart="#ffffff",colorEnd="#cbdcf1",blend="normal",textureId="")
 
 class AgentError(Exception):
     pass
